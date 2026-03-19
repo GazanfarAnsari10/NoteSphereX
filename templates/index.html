@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - Notes App</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>Your Notes</h2>
+
+    <!-- Create Note Section -->
+    <textarea id="noteContent" placeholder="Write a note..."></textarea>
+    <br><br>
+    <button onclick="createNote()">Add Note</button>
+    <button onclick="logout()">Logout</button>
+
+    <hr>
+
+    <!-- Notes List -->
+    <div id="notesList"></div>
+</div>
+
+<script src="/static/js/notes.js"></script>
+</body>
+</html>
