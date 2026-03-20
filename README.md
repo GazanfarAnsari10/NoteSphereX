@@ -147,7 +147,7 @@ Token Sent in Headers → Backend Validates → Access Granted
 
 <hr>
 
-<h3>Authors</h3>
+<h3>Author</h3>
 
 <p>
 <b>Mohammad Gazanfar Ansari</b><br>
