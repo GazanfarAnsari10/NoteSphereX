@@ -147,10 +147,17 @@ Token Sent in Headers → Backend Validates → Access Granted
 
 <hr>
 
-<h2>Author</h2>
+<b>Authors</b>
+
 <p>
-  <b>Mohammad Gazanfar Ansari</b><br>
-  B.Tech CSE (Artificail Intellignece & Machine Learning)
+<b>Mohammad Gazanfar Ansari</b><br>
+B.Tech CSE (Artificial Intelligence & Machine Learning)
+<br>
+<a href="https://www.linkedin.com/in/mohammad-gazanfar-ansari" target="_blank">
+LinkedIn</a>
+&nbsp; | &nbsp;
+<a href="mailto:gazi.freestyle@gmail.com">
+Email</a>
 </p>
 
 <hr>
