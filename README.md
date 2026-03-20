@@ -150,7 +150,7 @@ Token Sent in Headers → Backend Validates → Access Granted
 <h2>Author</h2>
 <p>
   <b>Mohammad Gazanfar Ansari</b><br>
-  B.Tech CSE (AI-ML)
+  B.Tech CSE (Artificail Intellignece & Machine Learning)
 </p>
 
 <hr>
