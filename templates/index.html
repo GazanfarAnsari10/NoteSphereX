@@ -1,25 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard - Notes App</title>
+    <title>Dashboard - NoteSphereX</title>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="dash-body">
 
-<div class="container">
-    <h2>Your Notes</h2>
+    <!-- ── Ambient Background ── -->
+    <div class="dash-bg">
+        <div class="dash-orb dash-orb-1"></div>
+        <div class="dash-orb dash-orb-2"></div>
+        <div class="dash-grid"></div>
+    </div>
 
-    <!-- Create Note Section -->
-    <textarea id="noteContent" placeholder="Write a note..."></textarea>
-    <br><br>
-    <button onclick="createNote()">Add Note</button>
-    <button onclick="logout()">Logout</button>
+    <!-- ── Top Navigation ── -->
+    <header class="dash-header">
+        <div class="dash-header-inner">
+            <div class="dash-brand">
+                <div class="dash-brand-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <span class="dash-brand-name">NoteSphereX</span>
+            </div>
 
-    <hr>
+            <div class="dash-header-actions">
+                <div class="dash-note-count">
+                    <span id="noteCountBadge">0 notes</span>
+                </div>
+                <button onclick="logout()" class="dash-logout-btn">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
 
-    <!-- Notes List -->
-    <div id="notesList"></div>
-</div>
+    <!-- ── Main Layout ── -->
+    <main class="dash-main">
+
+        <!-- ── Page Heading ── -->
+        <div class="dash-heading">
+            <h2 class="dash-title">Your Notes</h2>
+            <p class="dash-subtitle">Capture ideas, thoughts, and everything in between.</p>
+        </div>
+
+        <!-- ── Compose Area ── -->
+        <div class="dash-compose">
+            <div class="dash-compose-inner">
+                <textarea id="noteContent" placeholder="Start writing a note..." class="dash-textarea"></textarea>
+                <div class="dash-compose-footer">
+                    <span class="dash-char-hint">Write something worth remembering.</span>
+                    <button onclick="createNote()" class="dash-add-btn">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        <span>Add Note</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Notes List ── -->
+        <div id="notesList" class="dash-notes-list">
+            
+        </div>
+
+    </main>
 
 <script src="/static/js/notes.js"></script>
 </body>
