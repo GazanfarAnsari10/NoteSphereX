@@ -1,7 +1,16 @@
+<<<<<<< HEAD
 fastapi
 uvicorn
 sqlalchemy
 python-jose
 passlib[bcrypt]
 jinja2
+=======
+fastapi
+uvicorn
+sqlalchemy
+python-jose
+passlib[bcrypt]
+jinja2
+>>>>>>> 349bf4ee74a7861f335422dbd593e84e513c8d0f
 python-multipart
