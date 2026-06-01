@@ -6,7 +6,7 @@
 
 <hr>
 
-<h2>Overview</h2>
+<h2>Project Overview</h2>
 <p>
   <b>NoteSphereX</b> is a full-stack web-based notes management application that allows users to securely create, manage, and organize their personal notes. The application implements user authentication using JWT and provides a seamless interface for performing CRUD operations on notes, all backed by a persistent SQLite database.
 </p>
