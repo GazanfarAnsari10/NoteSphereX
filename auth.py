@@ -17,6 +17,11 @@ def verify_password(plain, hashed):
     return pwd_context.verify(plain, hashed)
 
 SECRET = os.getenv("SECRET_KEY")
+if not SECRET or not SECRET.strip():
+    raise RuntimeError("SECRET_KEY must be set in the environment before starting NoteSphereX.")
+if len(SECRET.encode("utf-8")) < 32:
+    raise RuntimeError("SECRET_KEY must contain at least 32 bytes for HS256 security.")
+
 ALGORITHM = "HS256"
 security = HTTPBearer()
 def create_token(data: dict):
@@ -29,6 +34,11 @@ def create_token(data: dict):
 def get_current_user(token=Depends(security)):
     try:
         payload = jwt.decode(token.credentials, SECRET, algorithms=[ALGORITHM])
-        return payload["sub"]
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid Token")
+
+    subject = payload.get("sub") if isinstance(payload, dict) else None
+    if not isinstance(subject, str) or not subject:
+        raise HTTPException(status_code=401, detail="Invalid Token")
+
+    return subject
