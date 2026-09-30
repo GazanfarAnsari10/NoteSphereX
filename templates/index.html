@@ -3,6 +3,7 @@
 <head>
     <title>Dashboard - NoteSphereX</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="/static/js/theme.js"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 </head>
@@ -74,12 +75,27 @@
                         <div class="dash-note-count">
                             <span id="noteCountBadge">0 notes</span>
                         </div>
-                        <button onclick="logout()" class="dash-logout-btn">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-                            </svg>
-                            <span>Logout</span>
-                        </button>
+                        <div class="profile-menu" data-profile-menu>
+                            <button class="profile-trigger" id="profileMenuButton" type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded="false" aria-controls="profileDropdown" title="Profile">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/>
+                                </svg>
+                            </button>
+                            <div class="profile-dropdown" id="profileDropdown" role="menu" aria-labelledby="profileMenuButton" hidden>
+                                <a class="profile-menu-item" href="/settings" role="menuitem">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.8-.7a8 8 0 0 1-1.7 1l-.3 1.9h-2.8l-.3-1.9a8 8 0 0 1-1.7-1l-1.8.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.8.7a8 8 0 0 1 1.7-1l.3-1.9h2.8l.3 1.9a8 8 0 0 1 1.7 1l1.8-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2z" transform="translate(-1 -1)"/>
+                                    </svg>
+                                    <span>Settings</span>
+                                </a>
+                                <button class="profile-menu-item profile-menu-logout" type="button" role="menuitem" onclick="logout()">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                                    </svg>
+                                    <span>Logout</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -125,5 +141,6 @@
     </div>
 
 <script src="/static/js/notes.js"></script>
+<script src="/static/js/profile-menu.js"></script>
 </body>
 </html>

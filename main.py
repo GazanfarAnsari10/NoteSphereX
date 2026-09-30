@@ -49,6 +49,10 @@ def register_page(request: Request):
 def dashboard_page(request: Request):
     return templates.TemplateResponse(request, "index.html")
 
+@app.get("/settings")
+def settings_page(request: Request):
+    return templates.TemplateResponse(request, "settings.html")
+
 
 # ----------------------------
 # API Routes
