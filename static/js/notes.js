@@ -1,4 +1,6 @@
 const token = localStorage.getItem("token")
+let loadedNotes = []
+let searchTerm = ""
 
 const dashLayout = document.getElementById("dashLayout")
 const sidebarMenu = document.getElementById("sidebarMenu")
@@ -6,6 +8,12 @@ const sidebarClose = document.getElementById("sidebarClose")
 const sidebarBackdrop = document.getElementById("sidebarBackdrop")
 const sidebarCollapse = document.getElementById("sidebarCollapse")
 const mobileSidebar = window.matchMedia("(max-width: 800px)")
+const noteSearch = document.getElementById("noteSearch")
+
+noteSearch.addEventListener("input", () => {
+    searchTerm = noteSearch.value.trim().toLowerCase()
+    renderNotes()
+})
 
 function setSidebarOpen(isOpen, restoreFocus = false) {
     dashLayout.classList.toggle("is-sidebar-open", isOpen)
@@ -62,33 +70,21 @@ if (!token) {
 // ----------------------------
 // Fetch Notes
 // ----------------------------
-async function fetchNotes() {
+function createNoteActionButton(label, classNames, iconMarkup) {
+    const button = document.createElement("button")
+    button.type = "button"
+    button.classList.add(...classNames.split(" "))
+    button.setAttribute("aria-label", label)
+    button.title = label
+    button.innerHTML = iconMarkup
+    return button
+}
 
-    const res = await fetch("/notes", {
-        headers: {
-            "Authorization": "Bearer " + token
-        }
-    })
-
-    if (res.status === 401) {
-        alert("Session expired. Please login again.")
-        logout()
-        return
-    }
-
-    const notes = await res.json()
-
+function renderNotes() {
     const container = document.getElementById("notesList")
     container.innerHTML = ""
 
-    // Update note count badge in header
-    const badge = document.getElementById("noteCountBadge")
-    if (badge) {
-        badge.innerText = notes.length === 1 ? "1 note" : `${notes.length} notes`
-    }
-
-    // Show empty state if no notes
-    if (notes.length === 0) {
+    if (loadedNotes.length === 0) {
         const empty = document.createElement("div")
         empty.classList.add("dash-empty")
         empty.innerHTML = `
@@ -107,8 +103,23 @@ async function fetchNotes() {
         return
     }
 
-    notes.forEach(note => {
+    const matchingNotes = loadedNotes.filter(note => {
+        const searchableText = `${note.title || ""}\n${note.content || ""}`.toLowerCase()
+        return searchableText.includes(searchTerm)
+    })
 
+    if (matchingNotes.length === 0) {
+        const empty = document.createElement("div")
+        empty.classList.add("dash-empty")
+        empty.innerHTML = `
+            <div class="dash-empty-title">No matching notes found</div>
+            <div class="dash-empty-sub">Try another search term.</div>
+        `
+        container.appendChild(empty)
+        return
+    }
+
+    matchingNotes.forEach(note => {
         const div = document.createElement("div")
         div.classList.add("note-card")
 
@@ -119,14 +130,18 @@ async function fetchNotes() {
         const actions = document.createElement("div")
         actions.classList.add("note-actions")
 
-        const editBtn = document.createElement("button")
-        editBtn.innerText = "Edit"
-        editBtn.classList.add("note-btn", "note-btn-edit")
+        const editBtn = createNoteActionButton(
+            "Edit note",
+            "note-btn note-btn-edit note-btn-icon",
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>'
+        )
         editBtn.onclick = () => editNote(note, div, text, actions)
 
-        const deleteBtn = document.createElement("button")
-        deleteBtn.innerText = "Delete"
-        deleteBtn.classList.add("note-btn", "note-btn-delete")
+        const deleteBtn = createNoteActionButton(
+            "Delete note",
+            "note-btn note-btn-delete note-btn-icon",
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5m4-5v5"/></svg>'
+        )
         deleteBtn.onclick = () => deleteNote(note.id)
 
         actions.appendChild(editBtn)
@@ -134,9 +149,33 @@ async function fetchNotes() {
 
         div.appendChild(text)
         div.appendChild(actions)
-
         container.appendChild(div)
     })
+}
+
+async function fetchNotes() {
+
+    const res = await fetch("/notes", {
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    })
+
+    if (res.status === 401) {
+        alert("Session expired. Please login again.")
+        logout()
+        return
+    }
+
+    const notes = await res.json()
+    loadedNotes = notes
+
+    // Update note count badge in header
+    const badge = document.getElementById("noteCountBadge")
+    if (badge) {
+        badge.innerText = notes.length === 1 ? "1 note" : `${notes.length} notes`
+    }
+    renderNotes()
 }
 
 // ----------------------------
@@ -251,14 +290,18 @@ async function editNote(note, cardDiv, textEl, actionsEl) {
         textEl.style.display = ""
         actionsEl.innerHTML = ""
 
-        const editBtn = document.createElement("button")
-        editBtn.innerText = "Edit"
-        editBtn.classList.add("note-btn", "note-btn-edit")
+        const editBtn = createNoteActionButton(
+            "Edit note",
+            "note-btn note-btn-edit note-btn-icon",
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>'
+        )
         editBtn.onclick = () => editNote(note, cardDiv, textEl, actionsEl)
 
-        const deleteBtn = document.createElement("button")
-        deleteBtn.innerText = "Delete"
-        deleteBtn.classList.add("note-btn", "note-btn-delete")
+        const deleteBtn = createNoteActionButton(
+            "Delete note",
+            "note-btn note-btn-delete note-btn-icon",
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5m4-5v5"/></svg>'
+        )
         deleteBtn.onclick = () => deleteNote(note.id)
 
         actionsEl.appendChild(editBtn)
