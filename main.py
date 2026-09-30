@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from database import engine
 from models import Base
 from fastapi import FastAPI, Depends, Request, HTTPException
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from models import User, Note
@@ -14,6 +16,15 @@ app = FastAPI(
     description="Authenticated Notes Management API by Gazanfar Ansari",
     version="1.0.0"
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = [
+        {key: value for key, value in error.items() if key != "input"}
+        for error in exc.errors()
+    ]
+    return JSONResponse(status_code=422, content={"detail": errors})
 
 Base.metadata.create_all(bind=engine)
 

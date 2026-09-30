@@ -48,7 +48,7 @@ async function register() {
 // LOGOUT
 function logout() {
     localStorage.removeItem("token");
-    window.location.href = "/login";
+    window.location.replace("/login");
 }
 
 // PROTECT DASHBOARD

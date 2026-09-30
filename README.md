@@ -8,7 +8,7 @@
 
 <h2>Project Overview</h2>
 <p>
-  <b>NoteSphereX</b> is a full-stack web-based notes management application that allows users to securely create, manage, and organize their personal notes. The application implements user authentication using JWT and provides a seamless interface for performing CRUD operations on notes, all backed by a persistent SQLite database.
+  <b>NoteSphereX</b> is a full-stack web-based notes management application that allows users to securely create, manage, and organize their personal notes. The application implements user authentication using JWT and provides a seamless interface for performing CRUD operations on notes, all backed by PostgreSQL configured through <code>DATABASE_URL</code>.
 </p>
 
 <hr>
@@ -19,7 +19,7 @@
 <ul>
   <li>FastAPI (Python)</li>
   <li>SQLAlchemy (ORM)</li>
-  <li>SQLite (Database)</li>
+  <li>PostgreSQL via psycopg</li>
   <li>JWT Authentication (python-jose)</li>
   <li>Password Hashing (passlib - bcrypt)</li>
 </ul>
@@ -58,25 +58,29 @@ NoteSphereX/
 ├── schemas.py
 ├── database.py
 ├── auth.py
-│
-├── notes.db
+├── requirements.txt
 │
 ├── templates/
 │   ├── login.html
 │   ├── register.html
-│   └── index.html
+│   ├── index.html
+│   └── settings.html
 │
 └── static/
     ├── css/
     │   └── styles.css
     │
     └── js/
-        └── notes.js
+        ├── auth.js
+        ├── notes.js
+        ├── profile-menu.js
+        ├── settings.js
+        └── theme.js
 </pre>
 
 <hr>
 
-<h2>⚙️ Installation & Setup</h2>
+<h2>⚙️ Installation &amp; Setup</h2>
 
 <h3>1. Clone the Repository</h3>
 <pre>git clone https://github.com/GazanfarAnsari10/NoteSphereX.git</pre>
@@ -99,10 +103,16 @@ source myenv/bin/activate
 <h3>5. Install Dependencies</h3>
 <pre>pip install -r requirements.txt</pre>
 
-<h3>6. Run the Application</h3>
+<h3>6. Configure Environment</h3>
+<p>
+  Set <code>DATABASE_URL</code> to your PostgreSQL connection URL and <code>SECRET_KEY</code> to a unique random value of at least 32 bytes. Store these in deployment environment variables or an untracked local <code>.env</code>; never commit secrets. Generate a key with:
+</p>
+<pre>python -c "import secrets; print(secrets.token_hex(32))"</pre>
+
+<h3>7. Run the Application</h3>
 <pre>uvicorn main:app --reload</pre>
 
-<h3>7. Open in Browser</h3>
+<h3>8. Open in Browser</h3>
 <pre>http://127.0.0.1:8000</pre>
 
 <hr>
@@ -112,6 +122,8 @@ source myenv/bin/activate
 <pre>
 POST   /register
 POST   /login
+GET    /users/me
+PUT    /users/me/password
 POST   /notes
 GET    /notes
 PUT    /notes/{id}
@@ -123,7 +135,7 @@ DELETE /notes/{id}
 <h2>🔐 Authentication Workflow</h2>
 
 <pre>
-User Login → JWT Token Generated → Stored in Browser → 
+User Login → JWT Token Generated → Stored in Browser →
 Token Sent in Headers → Backend Validates → Access Granted
 </pre>
 

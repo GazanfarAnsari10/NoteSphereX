@@ -323,7 +323,7 @@ async function editNote(note, cardDiv, textEl, actionsEl) {
 // ----------------------------
 function logout() {
     localStorage.removeItem("token")
-    window.location.href = "/login"
+    window.location.replace("/login")
 }
 
 // Initial Load
