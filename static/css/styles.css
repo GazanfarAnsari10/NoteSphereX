@@ -750,16 +750,43 @@
    ============================================================ */
 
 @media (max-width: 600px) {
+    .auth-body {
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: 24px 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+    .auth-wrapper {
+        width: calc(100% - 32px);
+        gap: 20px;
+    }
     .auth-card {
-        width: calc(100vw - 32px);
+        width: 100%;
         padding: 30px 22px 26px;
     }
     .auth-title { font-size: 1.65rem; }
+    .auth-card input[type="text"],
+    .auth-card input[type="password"] { min-height: 44px; }
+    .auth-btn { min-height: 44px; }
 
     .dash-main { padding: 36px 16px 60px; gap: 26px; }
     .dash-title { font-size: 2rem; }
     .dash-header-inner { padding: 0 16px; }
     .dash-brand-name { display: none; }
     .dash-notes-list { grid-template-columns: 1fr; }
-    .dash-compose-footer { flex-direction: column; align-items: flex-end; gap: 10px; }
+    .dash-compose-footer { flex-direction: column; align-items: stretch; gap: 10px; }
+    .dash-char-hint { line-height: 1.5; }
+    .dash-add-btn { min-height: 44px; align-self: flex-end; }
+    .dash-logout-btn { min-height: 44px; }
+    .note-btn { min-height: 44px; padding: 9px 13px; }
+}
+
+@media (max-width: 360px) {
+    .auth-card { padding-right: 18px; padding-left: 18px; }
+    .dash-main { padding-right: 12px; padding-left: 12px; }
+    .dash-header-inner { padding-right: 12px; padding-left: 12px; }
+    .dash-header-actions { gap: 8px; }
+    .dash-logout-btn { padding-right: 10px; padding-left: 10px; }
+    .dash-compose-footer { padding-right: 12px; padding-left: 12px; }
 }
