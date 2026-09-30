@@ -6,7 +6,7 @@ from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from models import User, Note
-from schemas import UserRegister, UserLogin, UserPublic, Note as NoteSchema
+from schemas import PasswordChange, UserRegister, UserLogin, UserPublic, Note as NoteSchema
 from auth import hash_password, verify_password, create_token, get_current_user
 
 app = FastAPI(
@@ -109,6 +109,26 @@ def get_current_user_profile(
         raise HTTPException(status_code=401, detail="User not found")
 
     return {"id": user.id, "username": user.username}
+
+
+@app.put("/users/me/password")
+def change_current_user_password(
+    password_change: PasswordChange,
+    current_user: str = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.username == current_user).first()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    if not verify_password(password_change.current_password, user.password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect.")
+
+    user.password = hash_password(password_change.new_password)
+    db.commit()
+
+    return {"message": "Password updated successfully."}
 
 
 @app.post("/notes")

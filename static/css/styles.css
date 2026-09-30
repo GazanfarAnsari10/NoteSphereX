@@ -1148,6 +1148,12 @@
     overflow-wrap: anywhere;
 }
 
+.settings-account-message {
+    margin-top: 12px;
+    color: var(--dash-danger);
+    font-size: 0.845rem;
+}
+
 .settings-theme-fieldset {
     min-width: 0;
     padding: 0;
@@ -1229,20 +1235,56 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-input);
     background: var(--bg-input);
-    color: var(--text-muted);
+    color: var(--text-primary);
     font: 400 0.9rem var(--font-body);
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
 }
 
-.settings-placeholder-btn {
-    min-height: 42px;
+.settings-password-input::placeholder { color: var(--text-muted); }
+
+.settings-password-input:focus {
+    border-color: var(--border-focus);
+    background: var(--bg-input-focus);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.settings-password-submit {
+    min-height: 44px;
     margin-top: 16px;
     padding: 0 16px;
-    border: 1px solid var(--border);
+    border: 1px solid transparent;
     border-radius: 9px;
-    background: var(--bg-input);
-    color: var(--text-muted);
+    background: linear-gradient(135deg, var(--action-accent), #6db898);
+    color: #0b1a12;
     font: 400 0.85rem var(--font-body);
-    cursor: not-allowed;
+    cursor: pointer;
+    transition: background var(--transition), transform var(--transition);
+}
+
+.settings-password-submit:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--action-accent-hover), #8bc5a5);
+    transform: translateY(-1px);
+}
+
+.settings-password-submit:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+.settings-password-message {
+    min-height: 20px;
+    margin-top: 12px;
+    color: var(--text-secondary);
+    font-size: 0.845rem;
+}
+
+.settings-password-message[data-state="error"] {
+    color: var(--dash-danger);
+}
+
+.settings-password-message[data-state="success"] {
+    color: var(--accent);
 }
 
 

@@ -67,9 +67,10 @@
                 </div>
                 <div>
                     <span class="settings-account-label">Username</span>
-                    <span class="settings-account-name" data-account-username>Signed-in account</span>
+                    <span class="settings-account-name" data-account-username aria-live="polite">Loading account...</span>
                 </div>
             </div>
+            <p class="settings-account-message" data-account-message role="status" hidden></p>
         </section>
 
         <section class="settings-section" aria-labelledby="settings-preferences-title">
@@ -95,21 +96,29 @@
 
         <section class="settings-section" aria-labelledby="settings-security-title">
             <h2 class="settings-section-title" id="settings-security-title">Security</h2>
-            <div class="settings-password-grid">
-                <div class="settings-password-field">
-                    <label class="settings-password-label" for="currentPassword">Current password</label>
-                    <input class="settings-password-input" id="currentPassword" type="password" placeholder="Current password" autocomplete="current-password" disabled>
+            <form class="settings-password-form" id="settingsPasswordForm">
+                <div class="settings-password-grid">
+                    <div class="settings-password-field">
+                        <label class="settings-password-label" for="currentPassword">Current password</label>
+                        <input class="settings-password-input" id="currentPassword" name="current_password" type="password" placeholder="Current password" autocomplete="current-password" required>
+                    </div>
+                    <div class="settings-password-field">
+                        <label class="settings-password-label" for="newPassword">New password</label>
+                        <input class="settings-password-input" id="newPassword" name="new_password" type="password" placeholder="New password" autocomplete="new-password" required>
+                    </div>
+                    <div class="settings-password-field">
+                        <label class="settings-password-label" for="confirmPassword">Confirm new password</label>
+                        <input class="settings-password-input" id="confirmPassword" name="confirm_password" type="password" placeholder="Confirm new password" autocomplete="new-password" required>
+                    </div>
                 </div>
-                <div class="settings-password-field">
-                    <label class="settings-password-label" for="newPassword">New password</label>
-                    <input class="settings-password-input" id="newPassword" type="password" placeholder="New password" autocomplete="new-password" disabled>
-                </div>
-            </div>
-            <button class="settings-placeholder-btn" type="button" disabled>Change password</button>
+                <button class="settings-password-submit" type="submit">Change password</button>
+                <p class="settings-password-message" id="settingsPasswordMessage" role="status" aria-live="polite"></p>
+            </form>
         </section>
     </main>
 
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/profile-menu.js"></script>
+    <script src="/static/js/settings.js"></script>
 </body>
 </html>
