@@ -15,34 +15,88 @@
         <div class="dash-grid"></div>
     </div>
 
-    <!-- ── Top Navigation ── -->
-    <header class="dash-header">
-        <div class="dash-header-inner">
-            <div class="dash-brand">
-                <div class="dash-brand-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+    <div class="dash-layout" id="dashLayout">
+        <aside class="dash-sidebar" id="dashSidebar" aria-label="Main navigation">
+            <div class="dash-sidebar-top">
+                <a class="dash-sidebar-brand" href="/dashboard" aria-label="NoteSphereX home">
+                    <span class="dash-brand-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </span>
+                    <span class="dash-brand-name">NoteSphereX</span>
+                </a>
+                <button class="dash-sidebar-close" id="sidebarClose" type="button" aria-label="Close navigation">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
-                </div>
-                <span class="dash-brand-name">NoteSphereX</span>
-            </div>
-
-            <div class="dash-header-actions">
-                <div class="dash-note-count">
-                    <span id="noteCountBadge">0 notes</span>
-                </div>
-                <button onclick="logout()" class="dash-logout-btn">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-                    </svg>
-                    <span>Logout</span>
                 </button>
             </div>
-        </div>
-    </header>
 
-    <!-- ── Main Layout ── -->
-    <main class="dash-main">
+            <nav class="dash-sidebar-nav" aria-label="Notes">
+                <a class="dash-sidebar-link" href="#noteContent" data-sidebar-link aria-label="New Note" title="New Note">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    <span class="dash-sidebar-label">New Note</span>
+                </a>
+                <a class="dash-sidebar-link is-active" href="#notesList" data-sidebar-link aria-current="page" aria-label="All Notes" title="All Notes">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/>
+                    </svg>
+                    <span class="dash-sidebar-label">All Notes</span>
+                </a>
+                <button class="dash-sidebar-link is-unavailable" type="button" disabled aria-label="Favorites" title="Favorites">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3z"/>
+                    </svg>
+                    <span class="dash-sidebar-label">Favorites</span>
+                </button>
+                <button class="dash-sidebar-link is-unavailable" type="button" disabled aria-label="Trash" title="Trash">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6"/>
+                    </svg>
+                    <span class="dash-sidebar-label">Trash</span>
+                </button>
+                <button class="dash-sidebar-link is-unavailable" type="button" disabled aria-label="Settings" title="Settings">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.8-.7a8 8 0 0 1-1.7 1l-.3 1.9h-2.8l-.3-1.9a8 8 0 0 1-1.7-1l-1.8.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.8.7a8 8 0 0 1 1.7-1l.3-1.9h2.8l.3 1.9a8 8 0 0 1 1.7 1l1.8-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2z" transform="translate(-1 -1)"/>
+                    </svg>
+                    <span class="dash-sidebar-label">Settings</span>
+                </button>
+            </nav>
+        </aside>
+
+        <button class="dash-sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Close navigation" tabindex="-1"></button>
+
+        <div class="dash-workspace">
+            <header class="dash-header">
+                <div class="dash-header-inner">
+                    <button class="dash-menu-btn" id="sidebarMenu" type="button" aria-label="Open navigation" aria-controls="dashSidebar" aria-expanded="false">
+                        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
+                        </svg>
+                    </button>
+                    <button class="dash-collapse-btn" id="sidebarCollapse" type="button" aria-label="Collapse sidebar" aria-controls="dashSidebar" aria-expanded="true" title="Collapse sidebar">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m6-8h3"/>
+                        </svg>
+                    </button>
+                    <div class="dash-header-actions">
+                        <div class="dash-note-count">
+                            <span id="noteCountBadge">0 notes</span>
+                        </div>
+                        <button onclick="logout()" class="dash-logout-btn">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                            </svg>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="dash-main">
 
         <!-- ── Page Heading ── -->
         <div class="dash-heading">
@@ -71,7 +125,9 @@
             
         </div>
 
-    </main>
+            </main>
+        </div>
+    </div>
 
 <script src="/static/js/notes.js"></script>
 </body>

@@ -333,6 +333,153 @@
     overflow-x: hidden;
 }
 
+.dash-layout {
+    min-height: 100vh;
+    display: flex;
+    position: relative;
+}
+
+.dash-workspace {
+    min-width: 0;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+/* ---------- Sidebar ---------- */
+.dash-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    flex: 0 0 236px;
+    width: 236px;
+    height: 100vh;
+    padding: 22px 14px;
+    overflow-y: auto;
+    background: rgba(11, 15, 26, 0.62);
+    border-right: 1px solid var(--border);
+    transition: flex-basis var(--transition), width var(--transition), transform var(--transition);
+}
+
+.dash-sidebar-top {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 4px 30px;
+}
+
+.dash-sidebar-brand {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.dash-sidebar-brand .dash-brand-name {
+    white-space: nowrap;
+}
+
+.dash-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dash-sidebar-link {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: 400 0.875rem var(--font-body);
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color var(--transition), background var(--transition), border-color var(--transition);
+}
+
+.dash-sidebar-link svg {
+    flex: 0 0 20px;
+    color: var(--text-muted);
+}
+
+.dash-sidebar-link:hover:not(:disabled),
+.dash-sidebar-link.is-active {
+    color: var(--accent);
+    background: rgba(139, 197, 165, 0.08);
+    border-color: rgba(139, 197, 165, 0.12);
+}
+
+.dash-sidebar-link:hover:not(:disabled) svg,
+.dash-sidebar-link.is-active svg {
+    color: var(--accent);
+}
+
+.dash-sidebar-link:disabled {
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.dash-sidebar-close,
+.dash-menu-btn,
+.dash-collapse-btn {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color var(--transition), background var(--transition), border-color var(--transition);
+}
+
+.dash-sidebar-close:hover,
+.dash-menu-btn:hover,
+.dash-collapse-btn:hover {
+    color: var(--accent);
+    background: rgba(139, 197, 165, 0.08);
+    border-color: var(--border);
+}
+
+.dash-sidebar-close,
+.dash-menu-btn {
+    display: none;
+}
+
+.dash-sidebar-backdrop {
+    display: none;
+}
+
+.dash-layout.is-sidebar-collapsed .dash-sidebar {
+    flex-basis: 76px;
+    width: 76px;
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+.dash-layout.is-sidebar-collapsed .dash-sidebar-top {
+    justify-content: center;
+    margin-right: 0;
+    margin-left: 0;
+}
+
+.dash-layout.is-sidebar-collapsed .dash-sidebar-brand .dash-brand-name,
+.dash-layout.is-sidebar-collapsed .dash-sidebar-label {
+    display: none;
+}
+
 /* ---------- Dashboard Background ---------- */
 .dash-bg {
     position: fixed;
@@ -388,12 +535,13 @@
 
 .dash-header-inner {
     max-width: 860px;
+    width: 100%;
     margin: 0 auto;
     height: 100%;
     padding: 0 28px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 12px;
 }
 
 .dash-brand {
@@ -423,6 +571,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
+    margin-left: auto;
 }
 
 .dash-note-count {
@@ -773,7 +922,6 @@
     .dash-main { padding: 36px 16px 60px; gap: 26px; }
     .dash-title { font-size: 2rem; }
     .dash-header-inner { padding: 0 16px; }
-    .dash-brand-name { display: none; }
     .dash-notes-list { grid-template-columns: 1fr; }
     .dash-compose-footer { flex-direction: column; align-items: stretch; gap: 10px; }
     .dash-char-hint { line-height: 1.5; }
@@ -789,4 +937,74 @@
     .dash-header-actions { gap: 8px; }
     .dash-logout-btn { padding-right: 10px; padding-left: 10px; }
     .dash-compose-footer { padding-right: 12px; padding-left: 12px; }
+}
+
+@media (max-width: 800px) {
+    .dash-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 120;
+        width: min(280px, calc(100vw - 56px));
+        height: 100vh;
+        height: 100dvh;
+        padding: 20px 14px;
+        transform: translateX(-102%);
+        background: rgba(11, 15, 26, 0.97);
+        box-shadow: 18px 0 48px rgba(0, 0, 0, 0.38);
+    }
+
+    .dash-sidebar-top { margin-bottom: 26px; }
+    .dash-sidebar-close,
+    .dash-menu-btn { display: inline-flex; }
+    .dash-collapse-btn { display: none; }
+
+    .dash-sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 110;
+        display: block;
+        border: 0;
+        background: rgba(0, 0, 0, 0.52);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity var(--transition), visibility var(--transition);
+    }
+
+    .dash-layout.is-sidebar-open .dash-sidebar {
+        transform: translateX(0);
+    }
+
+    .dash-layout.is-sidebar-open .dash-sidebar-backdrop {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .dash-layout.is-sidebar-collapsed .dash-sidebar {
+        flex-basis: 236px;
+        width: min(280px, calc(100vw - 56px));
+        padding-right: 14px;
+        padding-left: 14px;
+    }
+
+    .dash-layout.is-sidebar-collapsed .dash-sidebar-top {
+        justify-content: space-between;
+        margin-right: 4px;
+        margin-left: 4px;
+    }
+
+    .dash-layout.is-sidebar-collapsed .dash-sidebar-brand .dash-brand-name,
+    .dash-layout.is-sidebar-collapsed .dash-sidebar-label {
+        display: inline;
+    }
+
+    .dash-layout.is-sidebar-collapsed .dash-sidebar-link {
+        justify-content: flex-start;
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+
+    .dash-body.is-sidebar-open { overflow: hidden; }
+    .dash-header-inner { padding-right: 16px; padding-left: 16px; }
 }

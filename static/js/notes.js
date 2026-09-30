@@ -1,5 +1,60 @@
 const token = localStorage.getItem("token")
 
+const dashLayout = document.getElementById("dashLayout")
+const sidebarMenu = document.getElementById("sidebarMenu")
+const sidebarClose = document.getElementById("sidebarClose")
+const sidebarBackdrop = document.getElementById("sidebarBackdrop")
+const sidebarCollapse = document.getElementById("sidebarCollapse")
+const mobileSidebar = window.matchMedia("(max-width: 800px)")
+
+function setSidebarOpen(isOpen, restoreFocus = false) {
+    dashLayout.classList.toggle("is-sidebar-open", isOpen)
+    document.body.classList.toggle("is-sidebar-open", isOpen)
+    sidebarMenu.setAttribute("aria-expanded", String(isOpen))
+    sidebarMenu.setAttribute("aria-label", isOpen ? "Close navigation" : "Open navigation")
+
+    if (restoreFocus) sidebarMenu.focus()
+}
+
+sidebarMenu.addEventListener("click", () => {
+    setSidebarOpen(!dashLayout.classList.contains("is-sidebar-open"))
+})
+sidebarClose.addEventListener("click", () => setSidebarOpen(false, true))
+sidebarBackdrop.addEventListener("click", () => setSidebarOpen(false, true))
+
+sidebarCollapse.addEventListener("click", () => {
+    const isCollapsed = dashLayout.classList.toggle("is-sidebar-collapsed")
+    sidebarCollapse.setAttribute("aria-expanded", String(!isCollapsed))
+    sidebarCollapse.setAttribute("aria-label", isCollapsed ? "Expand sidebar" : "Collapse sidebar")
+    sidebarCollapse.title = isCollapsed ? "Expand sidebar" : "Collapse sidebar"
+})
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && dashLayout.classList.contains("is-sidebar-open")) {
+        setSidebarOpen(false, true)
+    }
+})
+
+mobileSidebar.addEventListener("change", event => {
+    setSidebarOpen(false)
+    if (event.matches) dashLayout.classList.remove("is-sidebar-collapsed")
+})
+
+document.querySelectorAll("[data-sidebar-link]").forEach(link => {
+    link.addEventListener("click", () => {
+        document.querySelectorAll("[data-sidebar-link]").forEach(item => {
+            item.classList.toggle("is-active", item === link)
+            if (item === link) item.setAttribute("aria-current", "page")
+            else item.removeAttribute("aria-current")
+        })
+
+        if (mobileSidebar.matches) setSidebarOpen(false)
+        if (link.hash === "#noteContent") {
+            document.getElementById("noteContent").focus({ preventScroll: true })
+        }
+    })
+})
+
 if (!token) {
     window.location.href = "/login"
 }
