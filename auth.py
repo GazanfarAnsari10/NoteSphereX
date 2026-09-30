@@ -3,6 +3,10 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from fastapi import Depends,  HTTPException
 from fastapi.security import HTTPBearer
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
 
 pwd_context = CryptContext(schemes=["bcrypt"])
 
@@ -12,7 +16,7 @@ def hash_password (password: str):
 def verify_password(plain, hashed):
     return pwd_context.verify(plain, hashed)
 
-SECRET = "my_secret_key_123"
+SECRET = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 security = HTTPBearer()
 def create_token(data: dict):
