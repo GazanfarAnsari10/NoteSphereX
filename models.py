@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import CheckConstraint, Column, Integer, String, ForeignKey, text
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -15,9 +15,17 @@ class User(Base):
 
 class Note(Base):
     __tablename__ = "notes"
+    __table_args__ = (
+        CheckConstraint(
+            "category IN ('Personal', 'Work', 'Study', 'Ideas', 'Other')",
+            name="ck_notes_category",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     content = Column(String)
+    title = Column(String(160), nullable=False, default="", server_default=text("''"))
+    category = Column(String(20), nullable=False, default="Other", server_default=text("'Other'"))
     user_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="notes")

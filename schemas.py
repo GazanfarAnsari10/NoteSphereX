@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from typing import Literal
 
 def validate_password_input(password: str) -> str:
     if not password.strip():
@@ -37,6 +37,23 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
+NoteCategory = Literal["Personal", "Work", "Study", "Ideas", "Other"]
+
 class Note(BaseModel):
     content: str
-    title: Optional[str] = None
+    title: str = Field(default="", max_length=160)
+    category: NoteCategory = "Other"
+
+    @field_validator("title")
+    @classmethod
+    def normalize_title(cls, title: str) -> str:
+        return title.strip()
+
+
+class NoteRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    content: str
+    title: str
+    category: NoteCategory

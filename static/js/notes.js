@@ -11,6 +11,8 @@ const mobileSidebar = window.matchMedia("(max-width: 800px)")
 const noteSearch = document.getElementById("noteSearch")
 const noteComposer = document.getElementById("noteComposer")
 const createNoteButton = document.getElementById("createNoteButton")
+const noteTitleInput = document.getElementById("noteTitle")
+const noteCategoryInput = document.getElementById("noteCategory")
 
 function setComposerOpen(isOpen, focusEditor = false) {
     noteComposer.hidden = !isOpen
@@ -102,6 +104,15 @@ function createNoteActionButton(label, classNames, iconMarkup) {
     return button
 }
 
+function createNoteCategorySelect(category) {
+    const select = noteCategoryInput.cloneNode(true)
+    select.removeAttribute("id")
+    select.value = Array.from(select.options).some(option => option.value === category)
+        ? category
+        : "Other"
+    return select
+}
+
 function renderNotes() {
     const container = document.getElementById("notesList")
     container.innerHTML = ""
@@ -126,7 +137,7 @@ function renderNotes() {
     }
 
     const matchingNotes = loadedNotes.filter(note => {
-        const searchableText = `${note.title || ""}\n${note.content || ""}`.toLowerCase()
+        const searchableText = `${note.title || ""}\n${note.content || ""}\n${note.category || "Other"}`.toLowerCase()
         return searchableText.includes(searchTerm)
     })
 
@@ -145,8 +156,23 @@ function renderNotes() {
         const div = document.createElement("div")
         div.classList.add("note-card")
 
+        const heading = document.createElement("div")
+        heading.classList.add("note-card-heading")
+
+        const title = document.createElement("h3")
+        title.innerText = note.title?.trim() || "Untitled note"
+        title.classList.add("note-title")
+        if (!note.title?.trim()) title.classList.add("is-untitled")
+
+        const category = document.createElement("span")
+        category.innerText = note.category || "Other"
+        category.classList.add("note-category")
+
+        heading.appendChild(title)
+        heading.appendChild(category)
+
         const text = document.createElement("p")
-        text.innerText = note.content
+        text.innerText = note.content || ""
         text.classList.add("note-text")
 
         const actions = document.createElement("div")
@@ -157,7 +183,7 @@ function renderNotes() {
             "note-btn note-btn-edit note-btn-icon",
             '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>'
         )
-        editBtn.onclick = () => editNote(note, div, text, actions)
+        editBtn.onclick = () => editNote(note, div, heading, text, actions)
 
         const deleteBtn = createNoteActionButton(
             "Delete note",
@@ -169,6 +195,7 @@ function renderNotes() {
         actions.appendChild(editBtn)
         actions.appendChild(deleteBtn)
 
+        div.appendChild(heading)
         div.appendChild(text)
         div.appendChild(actions)
         container.appendChild(div)
@@ -206,6 +233,8 @@ async function fetchNotes() {
 async function createNote() {
 
     const content = document.getElementById("noteContent").value
+    const title = noteTitleInput.value.trim()
+    const category = noteCategoryInput.value
 
     if (!content || !content.trim()) return
 
@@ -216,7 +245,9 @@ async function createNote() {
             "Authorization": "Bearer " + token
         },
         body: JSON.stringify({
-            content: content
+            content: content,
+            title: title,
+            category: category
         })
     })
 
@@ -227,6 +258,8 @@ async function createNote() {
     }
 
     document.getElementById("noteContent").value = ""
+    noteTitleInput.value = ""
+    noteCategoryInput.value = "Other"
     setComposerOpen(false)
 
     fetchNotes()
@@ -259,18 +292,29 @@ async function deleteNote(id) {
 // ----------------------------
 // Edit Note  — inline card editing (no prompt())
 // ----------------------------
-async function editNote(note, cardDiv, textEl, actionsEl) {
+async function editNote(note, cardDiv, headingEl, textEl, actionsEl) {
 
     // If already in edit mode, do nothing
     if (cardDiv.classList.contains("is-editing")) return
     cardDiv.classList.add("is-editing")
 
-    // Hide the static text
+    // Hide the static note fields
+    headingEl.style.display = "none"
     textEl.style.display = "none"
 
-    // Create inline textarea
+    const titleInput = document.createElement("input")
+    titleInput.type = "text"
+    titleInput.maxLength = 160
+    titleInput.value = note.title || ""
+    titleInput.placeholder = "Note title (optional)"
+    titleInput.setAttribute("aria-label", "Note title")
+    titleInput.classList.add("note-title-input")
+
+    const categoryInput = createNoteCategorySelect(note.category || "Other")
+    categoryInput.setAttribute("aria-label", "Note category")
+
     const textarea = document.createElement("textarea")
-    textarea.value = note.content
+    textarea.value = note.content || ""
     textarea.classList.add("note-textarea")
     textarea.style.height = "auto"
     textarea.addEventListener("input", () => {
@@ -287,6 +331,8 @@ async function editNote(note, cardDiv, textEl, actionsEl) {
     saveBtn.onclick = async () => {
         const newContent = textarea.value.trim()
         if (!newContent) return
+        const newTitle = titleInput.value.trim()
+        const newCategory = categoryInput.value
 
         const res = await fetch(`/notes/${note.id}`, {
             method: "PUT",
@@ -294,7 +340,11 @@ async function editNote(note, cardDiv, textEl, actionsEl) {
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + token
             },
-            body: JSON.stringify({ content: newContent })
+            body: JSON.stringify({
+                content: newContent,
+                title: newTitle,
+                category: newCategory
+            })
         })
 
         if (res.status === 401) {
@@ -312,7 +362,10 @@ async function editNote(note, cardDiv, textEl, actionsEl) {
     cancelBtn.onclick = () => {
         // Restore original view without a network call
         cardDiv.classList.remove("is-editing")
+        titleInput.remove()
+        categoryInput.remove()
         textarea.remove()
+        headingEl.style.display = ""
         textEl.style.display = ""
         actionsEl.innerHTML = ""
 
@@ -321,7 +374,7 @@ async function editNote(note, cardDiv, textEl, actionsEl) {
             "note-btn note-btn-edit note-btn-icon",
             '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>'
         )
-        editBtn.onclick = () => editNote(note, cardDiv, textEl, actionsEl)
+        editBtn.onclick = () => editNote(note, cardDiv, headingEl, textEl, actionsEl)
 
         const deleteBtn = createNoteActionButton(
             "Delete note",
@@ -338,11 +391,12 @@ async function editNote(note, cardDiv, textEl, actionsEl) {
     actionsEl.appendChild(cancelBtn)
 
     // Insert textarea before actions
+    cardDiv.insertBefore(titleInput, actionsEl)
+    cardDiv.insertBefore(categoryInput, actionsEl)
     cardDiv.insertBefore(textarea, actionsEl)
     textarea.style.height = `${textarea.scrollHeight}px`
-    textarea.focus()
-    // Move cursor to end
-    textarea.setSelectionRange(textarea.value.length, textarea.value.length)
+    titleInput.focus()
+    titleInput.setSelectionRange(titleInput.value.length, titleInput.value.length)
 }
 
 // ----------------------------

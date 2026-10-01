@@ -119,6 +119,16 @@
         <!-- ── Compose Area ── -->
         <div class="dash-compose" id="noteComposer" hidden>
             <div class="dash-compose-inner">
+                <div class="dash-editor-fields">
+                    <input id="noteTitle" class="note-title-input" type="text" maxlength="160" placeholder="Note title (optional)" aria-label="Note title">
+                    <select id="noteCategory" class="note-category-select" aria-label="Note category">
+                        <option value="Personal">Personal</option>
+                        <option value="Work">Work</option>
+                        <option value="Study">Study</option>
+                        <option value="Ideas">Ideas</option>
+                        <option value="Other" selected>Other</option>
+                    </select>
+                </div>
                 <textarea id="noteContent" placeholder="Start writing a note..." class="dash-textarea"></textarea>
                 <div class="dash-compose-footer">
                     <span class="dash-char-hint">Write something worth remembering.</span>

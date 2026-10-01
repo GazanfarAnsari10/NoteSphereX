@@ -1,4 +1,4 @@
-from database import SessionLocal
+from database import SessionLocal, upgrade_note_metadata
 from sqlalchemy.orm import Session
 from database import engine
 from models import Base
@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from models import User, Note
-from schemas import PasswordChange, UserRegister, UserLogin, UserPublic, Note as NoteSchema
+from schemas import PasswordChange, UserRegister, UserLogin, UserPublic, Note as NoteSchema, NoteRead
 from auth import hash_password, verify_password, create_token, get_current_user
 
 app = FastAPI(
@@ -27,6 +27,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(status_code=422, content={"detail": errors})
 
 Base.metadata.create_all(bind=engine)
+upgrade_note_metadata()
 
 # Mount static and templates FIRST
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -156,6 +157,8 @@ def create_note(
 
     new_note = Note(
         content=note.content,
+        title=note.title,
+        category=note.category,
         user_id=db_user.id
     )
 
@@ -165,7 +168,7 @@ def create_note(
     return {"message": "Note Created"}
 
 
-@app.get("/notes")
+@app.get("/notes", response_model=list[NoteRead])
 def get_notes(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -229,6 +232,10 @@ def update_note(
         raise HTTPException(status_code=404, detail="Note not found")
 
     existing_note.content = note.content
+    if "title" in note.model_fields_set:
+        existing_note.title = note.title
+    if "category" in note.model_fields_set:
+        existing_note.category = note.category
 
     db.commit()
     db.refresh(existing_note)
