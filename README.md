@@ -112,7 +112,7 @@ source myenv/bin/activate
 <h3>7. Run the Application</h3>
 <pre>uvicorn main:app --reload</pre>
 
-<p>On startup, the application applies an idempotent PostgreSQL schema upgrade that adds title and category columns to existing notes. Existing note content is preserved; older notes receive an empty title and the <code>Other</code> category. The database role must have permission to alter the notes table during deployment.</p>
+<p>On startup, the application applies an idempotent PostgreSQL schema upgrade that adds title, category, and last-modified columns to existing notes. Existing note content is preserved; older notes receive an empty title, the <code>Other</code> category, and a default modification timestamp. The database role must have permission to alter the notes table during deployment.</p>
 
 <h3>8. Open in Browser</h3>
 <pre>http://127.0.0.1:8000</pre>

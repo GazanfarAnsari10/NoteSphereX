@@ -132,11 +132,12 @@
                 <textarea id="noteContent" placeholder="Start writing a note..." class="dash-textarea"></textarea>
                 <div class="dash-compose-footer">
                     <span class="dash-char-hint">Write something worth remembering.</span>
-                    <button onclick="createNote()" class="dash-add-btn">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <span id="noteSaveStatus" class="dash-save-status" role="status" aria-live="polite" hidden></span>
+                    <button id="noteSubmitButton" type="button" onclick="handleComposerAction()" class="dash-add-btn">
+                        <svg id="noteSubmitIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                         </svg>
-                        <span>Add Note</span>
+                        <span id="noteSubmitLabel">Add Note</span>
                     </button>
                 </div>
             </div>

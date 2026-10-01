@@ -179,7 +179,12 @@ def get_notes(
     if not db_user:
         raise HTTPException(status_code=401, detail="User not found")
 
-    user_notes = db.query(Note).filter(Note.user_id == db_user.id).all()
+    user_notes = (
+        db.query(Note)
+        .filter(Note.user_id == db_user.id)
+        .order_by(Note.updated_at.desc(), Note.id.desc())
+        .all()
+    )
 
     return user_notes
 
@@ -231,13 +236,21 @@ def update_note(
     if not existing_note:
         raise HTTPException(status_code=404, detail="Note not found")
 
-    existing_note.content = note.content
-    if "title" in note.model_fields_set:
-        existing_note.title = note.title
-    if "category" in note.model_fields_set:
-        existing_note.category = note.category
+    has_changes = existing_note.content != note.content
+    if has_changes:
+        existing_note.content = note.content
 
-    db.commit()
-    db.refresh(existing_note)
+    if "title" in note.model_fields_set:
+        if existing_note.title != note.title:
+            existing_note.title = note.title
+            has_changes = True
+    if "category" in note.model_fields_set:
+        if existing_note.category != note.category:
+            existing_note.category = note.category
+            has_changes = True
+
+    if has_changes:
+        db.commit()
+        db.refresh(existing_note)
 
     return {"message": "Note updated successfully"}

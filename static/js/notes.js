@@ -13,6 +13,47 @@ const noteComposer = document.getElementById("noteComposer")
 const createNoteButton = document.getElementById("createNoteButton")
 const noteTitleInput = document.getElementById("noteTitle")
 const noteCategoryInput = document.getElementById("noteCategory")
+const noteSaveStatus = document.getElementById("noteSaveStatus")
+const noteSubmitButton = document.getElementById("noteSubmitButton")
+const noteSubmitIcon = document.getElementById("noteSubmitIcon")
+const noteSubmitLabel = document.getElementById("noteSubmitLabel")
+const noteContentInput = document.getElementById("noteContent")
+let activeNote = null
+let initialNoteValues = null
+let savingNote = false
+let notesRefreshPending = false
+
+function setEditorMode(isEditing) {
+    noteSubmitLabel.textContent = isEditing ? "Done" : "Add Note"
+    noteSubmitButton.setAttribute("aria-label", isEditing ? "Save and close note" : "Add note")
+    noteSubmitIcon.innerHTML = isEditing
+        ? '<path d="m5 12 4 4L19 6"/>'
+        : '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'
+    document.querySelector(".dash-char-hint").textContent = isEditing
+        ? "Changes save when you close this note."
+        : "Write something worth remembering."
+}
+
+function setSaveStatus(message, isError = false) {
+    noteSaveStatus.textContent = message
+    noteSaveStatus.hidden = !message
+    noteSaveStatus.dataset.state = isError ? "error" : ""
+}
+
+function getEditorValues() {
+    return {
+        title: noteTitleInput.value.trim(),
+        category: noteCategoryInput.value,
+        content: noteContentInput.value
+    }
+}
+
+function resizeNoteContent() {
+    noteContentInput.style.height = "auto"
+    noteContentInput.style.height = `${noteContentInput.scrollHeight}px`
+}
+
+noteContentInput.addEventListener("input", resizeNoteContent)
 
 function setComposerOpen(isOpen, focusEditor = false) {
     noteComposer.hidden = !isOpen
@@ -23,11 +64,116 @@ function setComposerOpen(isOpen, focusEditor = false) {
         ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
         : '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
 
-    if (focusEditor) document.getElementById("noteContent").focus({ preventScroll: true })
+    if (focusEditor) noteTitleInput.focus({ preventScroll: true })
 }
 
-createNoteButton.addEventListener("click", () => {
-    setComposerOpen(noteComposer.hidden, noteComposer.hidden)
+function openCreateEditor() {
+    activeNote = null
+    initialNoteValues = null
+    notesRefreshPending = false
+    noteTitleInput.value = ""
+    noteCategoryInput.value = "Other"
+    noteContentInput.value = ""
+    setEditorMode(false)
+    setSaveStatus("")
+    setComposerOpen(true, true)
+    resizeNoteContent()
+}
+
+function openNoteEditor(note) {
+    activeNote = note
+    initialNoteValues = {
+        title: note.title || "",
+        category: note.category || "Other",
+        content: note.content || ""
+    }
+    noteTitleInput.value = initialNoteValues.title
+    noteCategoryInput.value = initialNoteValues.category
+    noteContentInput.value = initialNoteValues.content
+    setEditorMode(true)
+    setSaveStatus("")
+    setComposerOpen(true, true)
+    resizeNoteContent()
+}
+
+async function closeNoteEditor() {
+    if (savingNote) return false
+
+    if (activeNote) {
+        const values = getEditorValues()
+        const changed = values.title !== initialNoteValues.title
+            || values.category !== initialNoteValues.category
+            || values.content !== initialNoteValues.content
+
+        if (changed && !values.content.trim()) {
+            setSaveStatus("Note content cannot be empty. Your changes are still open.", true)
+            return false
+        }
+
+        if (changed || notesRefreshPending) {
+            savingNote = true
+            createNoteButton.disabled = true
+            noteSubmitButton.disabled = true
+            setSaveStatus(changed ? "Saving changes..." : "Refreshing notes...")
+
+            try {
+                if (changed) {
+                    const response = await fetch(`/notes/${activeNote.id}`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": "Bearer " + token
+                        },
+                        body: JSON.stringify(values)
+                    })
+
+                    if (response.status === 401) {
+                        alert("Session expired. Please login again.")
+                        logout(true)
+                        return false
+                    }
+                    if (!response.ok) throw new Error("Note update failed")
+
+                    Object.assign(activeNote, values)
+                    initialNoteValues = values
+                    notesRefreshPending = true
+                }
+
+                if (!await fetchNotes()) return false
+                notesRefreshPending = false
+            } catch {
+                setSaveStatus(
+                    notesRefreshPending
+                        ? "Changes were saved, but notes could not refresh. Close again to retry."
+                        : "Changes could not be saved. Your note is still open; try again.",
+                    true
+                )
+                return false
+            } finally {
+                savingNote = false
+                createNoteButton.disabled = false
+                noteSubmitButton.disabled = false
+            }
+        }
+    }
+
+    activeNote = null
+    initialNoteValues = null
+    notesRefreshPending = false
+    setSaveStatus("")
+    setEditorMode(false)
+    setComposerOpen(false)
+    return true
+}
+
+async function handleComposerAction() {
+    if (activeNote) await closeNoteEditor()
+    else await createNote()
+}
+
+createNoteButton.addEventListener("click", async () => {
+    if (noteComposer.hidden) openCreateEditor()
+    else await closeNoteEditor()
 })
 
 noteSearch.addEventListener("input", () => {
@@ -62,8 +208,10 @@ document.addEventListener("keydown", event => {
         setSidebarOpen(false, true)
     }
     if (event.key === "Escape" && !noteComposer.hidden) {
-        setComposerOpen(false)
-        createNoteButton.focus()
+        event.preventDefault()
+        closeNoteEditor().then(closed => {
+            if (closed) createNoteButton.focus()
+        })
     }
 })
 
@@ -73,7 +221,23 @@ mobileSidebar.addEventListener("change", event => {
 })
 
 document.querySelectorAll("[data-sidebar-link]").forEach(link => {
-    link.addEventListener("click", () => {
+    link.addEventListener("click", async event => {
+        const isNewNoteLink = link.hash === "#noteContent"
+        const isNotesLink = link.hash === "#notesList"
+
+        if (isNewNoteLink) {
+            event.preventDefault()
+            if (activeNote && !(await closeNoteEditor())) return
+            if (noteComposer.hidden) openCreateEditor()
+            else noteTitleInput.focus({ preventScroll: true })
+            window.location.hash = link.hash
+        } else if (activeNote || !noteComposer.hidden) {
+            event.preventDefault()
+            if (!(await closeNoteEditor())) return
+            if (isNotesLink) window.location.hash = link.hash
+            else window.location.assign(link.href)
+        }
+
         document.querySelectorAll("[data-sidebar-link]").forEach(item => {
             item.classList.toggle("is-active", item === link)
             if (item === link) item.setAttribute("aria-current", "page")
@@ -81,9 +245,17 @@ document.querySelectorAll("[data-sidebar-link]").forEach(link => {
         })
 
         if (mobileSidebar.matches) setSidebarOpen(false)
-        if (link.hash === "#noteContent") {
-            setComposerOpen(true, true)
-        }
+    })
+})
+
+document.addEventListener("click", event => {
+    const link = event.target.closest("a[href]")
+    if (!activeNote || !link || link.matches("[data-sidebar-link]") || event.defaultPrevented) return
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+
+    event.preventDefault()
+    closeNoteEditor().then(closed => {
+        if (closed) window.location.assign(link.href)
     })
 })
 
@@ -104,13 +276,9 @@ function createNoteActionButton(label, classNames, iconMarkup) {
     return button
 }
 
-function createNoteCategorySelect(category) {
-    const select = noteCategoryInput.cloneNode(true)
-    select.removeAttribute("id")
-    select.value = Array.from(select.options).some(option => option.value === category)
-        ? category
-        : "Other"
-    return select
+async function openExistingNote(note) {
+    if (!noteComposer.hidden && !(await closeNoteEditor())) return
+    openNoteEditor(note)
 }
 
 function renderNotes() {
@@ -155,6 +323,18 @@ function renderNotes() {
     matchingNotes.forEach(note => {
         const div = document.createElement("div")
         div.classList.add("note-card")
+        div.tabIndex = 0
+        div.setAttribute("role", "article")
+        div.setAttribute("aria-label", `Open note: ${note.title?.trim() || "Untitled note"}`)
+        div.addEventListener("click", event => {
+            if (event.target.closest("button")) return
+            openExistingNote(note)
+        })
+        div.addEventListener("keydown", event => {
+            if (event.target !== div || (event.key !== "Enter" && event.key !== " ")) return
+            event.preventDefault()
+            openExistingNote(note)
+        })
 
         const heading = document.createElement("div")
         heading.classList.add("note-card-heading")
@@ -178,21 +358,16 @@ function renderNotes() {
         const actions = document.createElement("div")
         actions.classList.add("note-actions")
 
-        const editBtn = createNoteActionButton(
-            "Edit note",
-            "note-btn note-btn-edit note-btn-icon",
-            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>'
-        )
-        editBtn.onclick = () => editNote(note, div, heading, text, actions)
-
         const deleteBtn = createNoteActionButton(
             "Delete note",
             "note-btn note-btn-delete note-btn-icon",
             '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5m4-5v5"/></svg>'
         )
-        deleteBtn.onclick = () => deleteNote(note.id)
+        deleteBtn.onclick = event => {
+            event.stopPropagation()
+            deleteNote(note.id)
+        }
 
-        actions.appendChild(editBtn)
         actions.appendChild(deleteBtn)
 
         div.appendChild(heading)
@@ -212,9 +387,10 @@ async function fetchNotes() {
 
     if (res.status === 401) {
         alert("Session expired. Please login again.")
-        logout()
-        return
+        logout(true)
+        return false
     }
+    if (!res.ok) throw new Error("Failed to load notes")
 
     const notes = await res.json()
     loadedNotes = notes
@@ -225,6 +401,7 @@ async function fetchNotes() {
         badge.innerText = notes.length === 1 ? "1 note" : `${notes.length} notes`
     }
     renderNotes()
+    return true
 }
 
 // ----------------------------
@@ -253,7 +430,11 @@ async function createNote() {
 
     if (res.status === 401) {
         alert("Session expired. Please login again.")
-        logout()
+        logout(true)
+        return
+    }
+    if (!res.ok) {
+        setSaveStatus("Could not create the note. Your draft is still open.", true)
         return
     }
 
@@ -282,7 +463,7 @@ async function deleteNote(id) {
 
     if (res.status === 401) {
         alert("Session expired. Please login again.")
-        logout()
+        logout(true)
         return
     }
 
@@ -290,119 +471,10 @@ async function deleteNote(id) {
 }
 
 // ----------------------------
-// Edit Note  — inline card editing (no prompt())
-// ----------------------------
-async function editNote(note, cardDiv, headingEl, textEl, actionsEl) {
-
-    // If already in edit mode, do nothing
-    if (cardDiv.classList.contains("is-editing")) return
-    cardDiv.classList.add("is-editing")
-
-    // Hide the static note fields
-    headingEl.style.display = "none"
-    textEl.style.display = "none"
-
-    const titleInput = document.createElement("input")
-    titleInput.type = "text"
-    titleInput.maxLength = 160
-    titleInput.value = note.title || ""
-    titleInput.placeholder = "Note title (optional)"
-    titleInput.setAttribute("aria-label", "Note title")
-    titleInput.classList.add("note-title-input")
-
-    const categoryInput = createNoteCategorySelect(note.category || "Other")
-    categoryInput.setAttribute("aria-label", "Note category")
-
-    const textarea = document.createElement("textarea")
-    textarea.value = note.content || ""
-    textarea.classList.add("note-textarea")
-    textarea.style.height = "auto"
-    textarea.addEventListener("input", () => {
-        textarea.style.height = "auto"
-        textarea.style.height = `${textarea.scrollHeight}px`
-    })
-
-    // Replace actions with Save / Cancel
-    actionsEl.innerHTML = ""
-
-    const saveBtn = document.createElement("button")
-    saveBtn.innerText = "Save"
-    saveBtn.classList.add("note-btn", "note-btn-save")
-    saveBtn.onclick = async () => {
-        const newContent = textarea.value.trim()
-        if (!newContent) return
-        const newTitle = titleInput.value.trim()
-        const newCategory = categoryInput.value
-
-        const res = await fetch(`/notes/${note.id}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + token
-            },
-            body: JSON.stringify({
-                content: newContent,
-                title: newTitle,
-                category: newCategory
-            })
-        })
-
-        if (res.status === 401) {
-            alert("Session expired. Please login again.")
-            logout()
-            return
-        }
-
-        fetchNotes()
-    }
-
-    const cancelBtn = document.createElement("button")
-    cancelBtn.innerText = "Cancel"
-    cancelBtn.classList.add("note-btn", "note-btn-edit")
-    cancelBtn.onclick = () => {
-        // Restore original view without a network call
-        cardDiv.classList.remove("is-editing")
-        titleInput.remove()
-        categoryInput.remove()
-        textarea.remove()
-        headingEl.style.display = ""
-        textEl.style.display = ""
-        actionsEl.innerHTML = ""
-
-        const editBtn = createNoteActionButton(
-            "Edit note",
-            "note-btn note-btn-edit note-btn-icon",
-            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>'
-        )
-        editBtn.onclick = () => editNote(note, cardDiv, headingEl, textEl, actionsEl)
-
-        const deleteBtn = createNoteActionButton(
-            "Delete note",
-            "note-btn note-btn-delete note-btn-icon",
-            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5m4-5v5"/></svg>'
-        )
-        deleteBtn.onclick = () => deleteNote(note.id)
-
-        actionsEl.appendChild(editBtn)
-        actionsEl.appendChild(deleteBtn)
-    }
-
-    actionsEl.appendChild(saveBtn)
-    actionsEl.appendChild(cancelBtn)
-
-    // Insert textarea before actions
-    cardDiv.insertBefore(titleInput, actionsEl)
-    cardDiv.insertBefore(categoryInput, actionsEl)
-    cardDiv.insertBefore(textarea, actionsEl)
-    textarea.style.height = `${textarea.scrollHeight}px`
-    titleInput.focus()
-    titleInput.setSelectionRange(titleInput.value.length, titleInput.value.length)
-}
-
-// ----------------------------
 // Logout
 // ----------------------------
-function logout() {
+async function logout(sessionExpired = false) {
+    if (!sessionExpired && activeNote && !(await closeNoteEditor())) return
     localStorage.removeItem("token")
     window.location.replace("/login")
 }

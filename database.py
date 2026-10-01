@@ -38,6 +38,10 @@ def upgrade_note_metadata():
             "ALTER TABLE notes ADD COLUMN IF NOT EXISTS "
             "category VARCHAR(20) NOT NULL DEFAULT 'Other'"
         ))
+        connection.execute(text(
+            "ALTER TABLE notes ADD COLUMN IF NOT EXISTS "
+            "updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP"
+        ))
         connection.execute(text("""
             DO $$
             BEGIN
