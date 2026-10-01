@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Messages - NoteSphereX</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="/static/js/theme.js"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body class="dash-body">
+    <div class="dash-bg">
+        <div class="dash-orb dash-orb-1"></div>
+        <div class="dash-orb dash-orb-2"></div>
+        <div class="dash-grid"></div>
+    </div>
+
+    <div class="dash-layout" id="dashLayout">
+        <aside class="dash-sidebar" id="dashSidebar" aria-label="Main navigation">
+            <div class="dash-sidebar-top">
+                <a class="dash-sidebar-brand" href="/dashboard" aria-label="NoteSphereX home">
+                    <span class="dash-brand-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </span>
+                    <span class="dash-brand-name">NoteSphereX</span>
+                </a>
+                <button class="dash-sidebar-close" id="sidebarClose" type="button" aria-label="Close navigation">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <nav class="dash-sidebar-nav" aria-label="Main">
+                <a class="dash-sidebar-link" href="/dashboard#noteContent" aria-label="New Note" title="New Note">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                    <span class="dash-sidebar-label">New Note</span>
+                </a>
+                <a class="dash-sidebar-link" href="/dashboard#notesList" aria-label="All Notes" title="All Notes">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>
+                    <span class="dash-sidebar-label">All Notes</span>
+                </a>
+                <a class="dash-sidebar-link is-active" href="/messages" aria-current="page" aria-label="Messages" title="Messages">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg>
+                    <span class="dash-sidebar-label">Messages</span>
+                </a>
+                <a class="dash-sidebar-link" href="/settings" aria-label="Settings" title="Settings">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.8-.7a8 8 0 0 1-1.7 1l-.3 1.9h-2.8l-.3-1.9a8 8 0 0 1-1.7-1l-1.8.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.8.7a8 8 0 0 1 1.7-1l.3-1.9h2.8l.3 1.9a8 8 0 0 1 1.7 1l1.8-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2z" transform="translate(-1 -1)"/></svg>
+                    <span class="dash-sidebar-label">Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <button class="dash-sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Close navigation" tabindex="-1"></button>
+
+        <div class="dash-workspace">
+            <header class="dash-header">
+                <div class="dash-header-inner">
+                    <button class="dash-menu-btn" id="sidebarMenu" type="button" aria-label="Open navigation" aria-controls="dashSidebar" aria-expanded="false">
+                        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+                    </button>
+                    <button class="dash-collapse-btn" id="sidebarCollapse" type="button" aria-label="Collapse sidebar" aria-controls="dashSidebar" aria-expanded="true" title="Collapse sidebar">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m6-8h3"/></svg>
+                    </button>
+                    <div class="dash-header-actions">
+                        <div class="dash-note-count"><span id="conversationCountBadge">0 conversations</span></div>
+                        <div class="profile-menu" data-profile-menu>
+                            <button class="profile-trigger" id="profileMenuButton" type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded="false" aria-controls="profileDropdown" title="Profile">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>
+                            </button>
+                            <div class="profile-dropdown" id="profileDropdown" role="menu" aria-labelledby="profileMenuButton" hidden>
+                                <a class="profile-menu-item" href="/settings" role="menuitem">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.8-.7a8 8 0 0 1-1.7 1l-.3 1.9h-2.8l-.3-1.9a8 8 0 0 1-1.7-1l-1.8.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.8.7a8 8 0 0 1 1.7-1l.3-1.9h2.8l.3 1.9a8 8 0 0 1 1.7 1l1.8-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2z" transform="translate(-1 -1)"/></svg>
+                                    <span>Settings</span>
+                                </a>
+                                <button class="profile-menu-item profile-menu-logout" type="button" role="menuitem" onclick="logout()">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                    <span>Logout</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="dash-main messages-main">
+                <div class="messages-page-heading">
+                    <div>
+                        <h1 class="dash-title">Messages</h1>
+                        <p class="messages-page-subtitle">Private conversations with NoteSphereX users.</p>
+                    </div>
+                </div>
+
+                <section class="messages-shell" id="messagesShell" aria-label="Messages">
+                    <aside class="messages-list-pane" aria-label="Conversations and user search">
+                        <div class="messages-list-heading">
+                            <h2>Conversations</h2>
+                            <button class="messages-new-button" id="focusUserSearch" type="button" aria-label="Start a conversation" title="Start a conversation">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                            </button>
+                        </div>
+                        <div class="messages-search-block">
+                            <label class="messages-search-label" for="userSearch">Find a user</label>
+                            <div class="messages-search-wrap">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                                <input id="userSearch" type="search" maxlength="100" placeholder="Search by username" autocomplete="off" aria-label="Search users by username" aria-controls="userSearchResults">
+                            </div>
+                            <div class="messages-search-results" id="userSearchResults" role="listbox" aria-label="Matching users" hidden></div>
+                            <p class="messages-inline-status" id="userSearchStatus" role="status" aria-live="polite" hidden></p>
+                        </div>
+                        <div class="messages-conversation-list" id="conversationList" role="list" aria-label="Your conversations">
+                            <div class="messages-list-placeholder" id="conversationListPlaceholder">Loading conversations...</div>
+                        </div>
+                    </aside>
+
+                    <section class="messages-chat-pane" aria-label="Active conversation">
+                        <div class="messages-chat-empty" id="chatEmptyState">
+                            <div class="messages-empty-icon" aria-hidden="true">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg>
+                            </div>
+                            <h2>Your conversations</h2>
+                            <p>Select a conversation or find a user to start one.</p>
+                        </div>
+
+                        <div class="messages-active-chat" id="activeChat" hidden>
+                            <header class="messages-chat-header">
+                                <button class="messages-back-button" id="backToConversations" type="button" aria-label="Back to conversations" title="Back to conversations">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/><path d="M20 12H9"/></svg>
+                                </button>
+                                <div class="messages-avatar" id="activeUserAvatar" aria-hidden="true">?</div>
+                                <div class="messages-chat-user">
+                                    <h2 id="activeUserName">Conversation</h2>
+                                    <p>NoteSphereX user</p>
+                                </div>
+                            </header>
+                            <button class="messages-load-older" id="loadOlderMessages" type="button" hidden>Load earlier messages</button>
+                            <ol class="messages-thread" id="messageThread" aria-label="Message history" aria-live="polite"></ol>
+                            <form class="messages-composer" id="messageForm">
+                                <label class="visually-hidden" for="messageInput">Write a message</label>
+                                <textarea id="messageInput" rows="1" maxlength="5000" placeholder="Write a message..." required></textarea>
+                                <button class="messages-send-button" id="sendMessageButton" type="submit" aria-label="Send message" title="Send message">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                                    <span>Send</span>
+                                </button>
+                                <p class="messages-send-status" id="messageStatus" role="status" aria-live="polite"></p>
+                            </form>
+                        </div>
+                    </section>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/profile-menu.js"></script>
+    <script src="/static/js/messages.js"></script>
+</body>
+</html>

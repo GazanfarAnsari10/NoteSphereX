@@ -8,14 +8,16 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from models import User, Note
-from schemas import PasswordChange, UserRegister, UserLogin, UserPublic, Note as NoteSchema, NoteRead
+from schemas import PasswordChange, UserRegister, UserLogin, UserPublic, Note as NoteSchema, NoteRead, NoteBulkDelete
 from auth import hash_password, verify_password, create_token, get_current_user
+from messaging import router as messaging_router
 
 app = FastAPI(
     title="Notes API",
     description="Authenticated Notes Management API by Gazanfar Ansari",
     version="1.0.0"
 )
+app.include_router(messaging_router)
 
 
 @app.exception_handler(RequestValidationError)
@@ -64,6 +66,10 @@ def dashboard_page(request: Request):
 @app.get("/settings")
 def settings_page(request: Request):
     return templates.TemplateResponse(request, "settings.html")
+
+@app.get("/messages")
+def messages_page(request: Request):
+    return templates.TemplateResponse(request, "messages.html")
 
 
 # ----------------------------
@@ -187,6 +193,30 @@ def get_notes(
     )
 
     return user_notes
+
+
+@app.post("/notes/bulk-delete")
+def bulk_delete_notes(
+    request: NoteBulkDelete,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    db_user = db.query(User).filter(User.username == current_user).first()
+
+    if not db_user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    deleted_count = (
+        db.query(Note)
+        .filter(Note.user_id == db_user.id, Note.id.in_(request.note_ids))
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+
+    return {
+        "message": "Selected notes deleted successfully",
+        "deleted_count": deleted_count,
+    }
 
 
 @app.delete("/notes/{note_id}")

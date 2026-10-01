@@ -4,7 +4,7 @@ if (profileMenu) {
     const profileButton = profileMenu.querySelector("#profileMenuButton")
     const profileDropdown = profileMenu.querySelector("#profileDropdown")
     const pageToken = localStorage.getItem("token")
-    if (["/dashboard", "/settings"].includes(window.location.pathname)) {
+    if (["/dashboard", "/settings", "/messages"].includes(window.location.pathname)) {
         window.addEventListener("pagehide", () => {
             document.documentElement.style.visibility = "hidden"
         })

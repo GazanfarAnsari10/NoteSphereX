@@ -9,6 +9,12 @@ const sidebarBackdrop = document.getElementById("sidebarBackdrop")
 const sidebarCollapse = document.getElementById("sidebarCollapse")
 const mobileSidebar = window.matchMedia("(max-width: 800px)")
 const noteSearch = document.getElementById("noteSearch")
+const selectModeButton = document.getElementById("selectModeButton")
+const noteSelectionControls = document.getElementById("noteSelectionControls")
+const selectAllNotes = document.getElementById("selectAllNotes")
+const selectedNoteCount = document.getElementById("selectedNoteCount")
+const deleteSelectedButton = document.getElementById("deleteSelectedButton")
+const bulkDeleteStatus = document.getElementById("bulkDeleteStatus")
 const noteComposer = document.getElementById("noteComposer")
 const createNoteButton = document.getElementById("createNoteButton")
 const noteTitleInput = document.getElementById("noteTitle")
@@ -22,6 +28,8 @@ let activeNote = null
 let initialNoteValues = null
 let savingNote = false
 let notesRefreshPending = false
+let selectionMode = false
+const selectedNoteIds = new Set()
 
 function setEditorMode(isEditing) {
     noteSubmitLabel.textContent = isEditing ? "Done" : "Add Note"
@@ -181,6 +189,60 @@ noteSearch.addEventListener("input", () => {
     renderNotes()
 })
 
+function getMatchingNotes() {
+    return loadedNotes.filter(note => {
+        const searchableText = `${note.title || ""}\n${note.content || ""}\n${note.category || "Other"}`.toLowerCase()
+        return searchableText.includes(searchTerm)
+    })
+}
+
+function updateSelectionControls() {
+    const matchingNotes = getMatchingNotes()
+    const selectedVisibleCount = matchingNotes.filter(note => selectedNoteIds.has(note.id)).length
+
+    selectedNoteCount.textContent = `${selectedNoteIds.size} selected`
+    deleteSelectedButton.disabled = selectedNoteIds.size === 0
+    selectAllNotes.checked = matchingNotes.length > 0 && selectedVisibleCount === matchingNotes.length
+    selectAllNotes.indeterminate = selectedVisibleCount > 0 && selectedVisibleCount < matchingNotes.length
+}
+
+function setSelectionMode(isActive) {
+    selectionMode = isActive
+    selectModeButton.textContent = isActive ? "Cancel" : "Select"
+    selectModeButton.setAttribute("aria-pressed", String(isActive))
+    noteSelectionControls.hidden = !isActive
+    bulkDeleteStatus.hidden = true
+    bulkDeleteStatus.textContent = ""
+
+    if (!isActive) selectedNoteIds.clear()
+    renderNotes()
+}
+
+function toggleNoteSelection(noteId) {
+    if (selectedNoteIds.has(noteId)) selectedNoteIds.delete(noteId)
+    else selectedNoteIds.add(noteId)
+
+    const card = document.querySelector(`.note-card[data-note-id="${noteId}"]`)
+    if (card) {
+        card.classList.toggle("is-selected", selectedNoteIds.has(noteId))
+        const checkbox = card.querySelector(".note-select-checkbox")
+        if (checkbox) checkbox.checked = selectedNoteIds.has(noteId)
+    }
+    updateSelectionControls()
+}
+
+selectModeButton.addEventListener("click", () => setSelectionMode(!selectionMode))
+
+selectAllNotes.addEventListener("change", () => {
+    getMatchingNotes().forEach(note => {
+        if (selectAllNotes.checked) selectedNoteIds.add(note.id)
+        else selectedNoteIds.delete(note.id)
+    })
+    renderNotes()
+})
+
+deleteSelectedButton.addEventListener("click", deleteSelectedNotes)
+
 function setSidebarOpen(isOpen, restoreFocus = false) {
     dashLayout.classList.toggle("is-sidebar-open", isOpen)
     document.body.classList.toggle("is-sidebar-open", isOpen)
@@ -301,13 +363,11 @@ function renderNotes() {
             <div class="dash-empty-sub">Write your first note above to get started.</div>
         `
         container.appendChild(empty)
+        updateSelectionControls()
         return
     }
 
-    const matchingNotes = loadedNotes.filter(note => {
-        const searchableText = `${note.title || ""}\n${note.content || ""}\n${note.category || "Other"}`.toLowerCase()
-        return searchableText.includes(searchTerm)
-    })
+    const matchingNotes = getMatchingNotes()
 
     if (matchingNotes.length === 0) {
         const empty = document.createElement("div")
@@ -317,27 +377,52 @@ function renderNotes() {
             <div class="dash-empty-sub">Try another search term.</div>
         `
         container.appendChild(empty)
+        updateSelectionControls()
         return
     }
 
     matchingNotes.forEach(note => {
         const div = document.createElement("div")
         div.classList.add("note-card")
+        div.dataset.noteId = String(note.id)
+        div.classList.toggle("is-select-mode", selectionMode)
+        div.classList.toggle("is-selected", selectedNoteIds.has(note.id))
         div.tabIndex = 0
         div.setAttribute("role", "article")
         div.setAttribute("aria-label", `Open note: ${note.title?.trim() || "Untitled note"}`)
         div.addEventListener("click", event => {
-            if (event.target.closest("button")) return
+            if (event.target.closest("button, input, label")) return
+            if (selectionMode) {
+                toggleNoteSelection(note.id)
+                return
+            }
             openExistingNote(note)
         })
         div.addEventListener("keydown", event => {
             if (event.target !== div || (event.key !== "Enter" && event.key !== " ")) return
             event.preventDefault()
-            openExistingNote(note)
+            if (selectionMode) toggleNoteSelection(note.id)
+            else openExistingNote(note)
         })
 
         const heading = document.createElement("div")
         heading.classList.add("note-card-heading")
+
+        if (selectionMode) {
+            const selectionLabel = document.createElement("label")
+            selectionLabel.classList.add("note-select-label")
+            selectionLabel.setAttribute("aria-label", `Select ${note.title?.trim() || "Untitled note"}`)
+
+            const checkbox = document.createElement("input")
+            checkbox.type = "checkbox"
+            checkbox.classList.add("note-select-checkbox")
+            checkbox.checked = selectedNoteIds.has(note.id)
+            checkbox.addEventListener("click", event => event.stopPropagation())
+            checkbox.addEventListener("change", () => toggleNoteSelection(note.id))
+
+            selectionLabel.appendChild(checkbox)
+            heading.appendChild(selectionLabel)
+        }
 
         const title = document.createElement("h3")
         title.innerText = note.title?.trim() || "Untitled note"
@@ -375,6 +460,7 @@ function renderNotes() {
         div.appendChild(actions)
         container.appendChild(div)
     })
+    updateSelectionControls()
 }
 
 async function fetchNotes() {
@@ -394,6 +480,10 @@ async function fetchNotes() {
 
     const notes = await res.json()
     loadedNotes = notes
+    const loadedNoteIds = new Set(notes.map(note => note.id))
+    selectedNoteIds.forEach(noteId => {
+        if (!loadedNoteIds.has(noteId)) selectedNoteIds.delete(noteId)
+    })
 
     // Update note count badge in header
     const badge = document.getElementById("noteCountBadge")
@@ -468,6 +558,45 @@ async function deleteNote(id) {
     }
 
     fetchNotes()
+}
+
+async function deleteSelectedNotes() {
+    const noteIds = Array.from(selectedNoteIds)
+    if (noteIds.length === 0) return
+    if (!confirm(`Delete ${noteIds.length} selected note${noteIds.length === 1 ? "" : "s"}? This cannot be undone.`)) return
+
+    deleteSelectedButton.disabled = true
+    bulkDeleteStatus.hidden = true
+    bulkDeleteStatus.textContent = ""
+
+    try {
+        const response = await fetch("/notes/bulk-delete", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify({ note_ids: noteIds })
+        })
+
+        if (response.status === 401) {
+            alert("Session expired. Please login again.")
+            logout(true)
+            return
+        }
+        if (!response.ok) throw new Error("Bulk delete failed")
+
+        const result = await response.json()
+        const requestedIds = new Set(noteIds)
+        loadedNotes = loadedNotes.filter(note => !requestedIds.has(note.id))
+        setSelectionMode(false)
+        bulkDeleteStatus.textContent = `${result.deleted_count} note${result.deleted_count === 1 ? "" : "s"} deleted.`
+        bulkDeleteStatus.hidden = false
+    } catch {
+        bulkDeleteStatus.textContent = "Could not delete the selected notes. Please try again."
+        bulkDeleteStatus.hidden = false
+        deleteSelectedButton.disabled = selectedNoteIds.size === 0
+    }
 }
 
 // ----------------------------

@@ -35,7 +35,7 @@
                 </button>
             </div>
 
-            <nav class="dash-sidebar-nav" aria-label="Notes">
+            <nav class="dash-sidebar-nav" aria-label="Main">
                 <a class="dash-sidebar-link" href="#noteContent" data-sidebar-link aria-label="New Note" title="New Note">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 5v14M5 12h14"/>
@@ -47,6 +47,12 @@
                         <path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/>
                     </svg>
                     <span class="dash-sidebar-label">All Notes</span>
+                </a>
+                <a class="dash-sidebar-link" href="/messages" data-sidebar-link aria-label="Messages" title="Messages">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/>
+                    </svg>
+                    <span class="dash-sidebar-label">Messages</span>
                 </a>
                 <a class="dash-sidebar-link" href="/settings" data-sidebar-link aria-label="Settings" title="Settings">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -114,6 +120,19 @@
                 <circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>
             </svg>
             <input id="noteSearch" class="dash-search-input" type="search" placeholder="Search notes..." aria-label="Search notes" autocomplete="off">
+        </div>
+
+        <div class="note-selection-toolbar">
+            <button id="selectModeButton" class="note-selection-button" type="button" aria-pressed="false">Select</button>
+            <div id="noteSelectionControls" class="note-selection-controls" hidden>
+                <label class="note-select-all">
+                    <input id="selectAllNotes" type="checkbox">
+                    <span>Select All</span>
+                </label>
+                <span id="selectedNoteCount" class="note-selection-count" aria-live="polite">0 selected</span>
+                <button id="deleteSelectedButton" class="note-btn note-btn-delete" type="button" disabled>Delete Selected</button>
+            </div>
+            <span id="bulkDeleteStatus" class="note-selection-status" role="status" aria-live="polite" hidden></span>
         </div>
 
         <!-- ── Compose Area ── -->

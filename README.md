@@ -8,7 +8,7 @@
 
 <h2>Project Overview</h2>
 <p>
-  <b>NoteSphereX</b> is a full-stack web-based notes management application that allows users to securely create, manage, and organize their personal notes. The application implements user authentication using JWT and provides a seamless interface for performing CRUD operations on notes, all backed by PostgreSQL configured through <code>DATABASE_URL</code>.
+  <b>NoteSphereX</b> is a full-stack web application for securely managing personal notes and exchanging private 1-to-1 messages with other NoteSphereX users. The application uses JWT authentication and PostgreSQL configured through <code>DATABASE_URL</code>.
 </p>
 
 <hr>
@@ -42,6 +42,8 @@
   <li>✔ View User-Specific Notes</li>
   <li>✔ Edit Notes (updates database in real-time)</li>
   <li>✔ Delete Notes (removes from database)</li>
+  <li>✔ Private 1-to-1 messaging with persistent history</li>
+  <li>✔ Search users and reopen existing conversations</li>
   <li>✔ Logout functionality</li>
   <li>✔ Token-based protected routes</li>
 </ul>
@@ -54,6 +56,7 @@
 NoteSphereX/
 │
 ├── main.py
+├── messaging.py
 ├── models.py
 ├── schemas.py
 ├── database.py
@@ -64,18 +67,23 @@ NoteSphereX/
 │   ├── login.html
 │   ├── register.html
 │   ├── index.html
-│   └── settings.html
+│   ├── settings.html
+│   └── messages.html
 │
-└── static/
-    ├── css/
-    │   └── styles.css
-    │
-    └── js/
-        ├── auth.js
-        ├── notes.js
-        ├── profile-menu.js
-        ├── settings.js
-        └── theme.js
+├── static/
+│   ├── css/
+│   │   └── styles.css
+│   │
+│   └── js/
+│       ├── auth.js
+│       ├── notes.js
+│       ├── profile-menu.js
+│       ├── settings.js
+│       ├── messages.js
+│       └── theme.js
+│
+└── tests/
+    └── test_messaging.py
 </pre>
 
 <hr>
@@ -112,7 +120,7 @@ source myenv/bin/activate
 <h3>7. Run the Application</h3>
 <pre>uvicorn main:app --reload</pre>
 
-<p>On startup, the application applies an idempotent PostgreSQL schema upgrade that adds title, category, and last-modified columns to existing notes. Existing note content is preserved; older notes receive an empty title, the <code>Other</code> category, and a default modification timestamp. The database role must have permission to alter the notes table during deployment.</p>
+<p>On startup, SQLAlchemy creates missing tables additively, including the messaging tables; it does not alter or remove existing note data. The application also applies an idempotent PostgreSQL schema update that adds title, category, and last-modified columns to existing notes. Existing note content is preserved. For first deployment of messaging, the database role needs permission to create tables and sequences in the target schema. If note metadata has not yet been applied, the role also needs permission to alter the notes table. No migration framework is used.</p>
 
 <h3>8. Open in Browser</h3>
 <pre>http://127.0.0.1:8000</pre>
@@ -126,6 +134,11 @@ POST   /register
 POST   /login
 GET    /users/me
 PUT    /users/me/password
+GET    /messages/users?query={username}
+GET    /messages/conversations
+POST   /messages/conversations
+GET    /messages/conversations/{id}/messages
+POST   /messages/conversations/{id}/messages
 POST   /notes
 GET    /notes
 PUT    /notes/{id}
@@ -158,6 +171,16 @@ Token Sent in Headers → Backend Validates → Access Granted
   <li>content</li>
   <li>user_id (foreign key)</li>
 </ul>
+
+<h3>Messaging Tables</h3>
+<ul>
+  <li><code>conversations</code>: id, two distinct ordered participant user IDs, created_at; a unique participant-pair constraint prevents duplicate conversations.</li>
+  <li><code>messages</code>: id, conversation_id, sender_id, text content, created_at.</li>
+</ul>
+<p>All messaging endpoints require the existing bearer JWT and only return or accept messages for conversations in which the authenticated user participates. Message history is returned in ascending order; the messages endpoint accepts optional <code>limit</code> and <code>before_id</code> query parameters for paging.</p>
+
+<h3>Messaging Tests</h3>
+<pre>python -m unittest discover -s tests -v</pre>
 
 <hr>
 

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Literal
+from datetime import datetime
 
 def validate_password_input(password: str) -> str:
     if not password.strip():
@@ -57,3 +58,66 @@ class NoteRead(BaseModel):
     content: str
     title: str
     category: NoteCategory
+
+
+class NoteBulkDelete(BaseModel):
+    note_ids: list[int] = Field(min_length=1)
+
+    @field_validator("note_ids")
+    @classmethod
+    def validate_note_ids(cls, note_ids: list[int]) -> list[int]:
+        if any(note_id <= 0 for note_id in note_ids):
+            raise ValueError("Note IDs must be positive integers.")
+        return list(dict.fromkeys(note_ids))
+
+
+class UserSearchRead(BaseModel):
+    id: int
+    username: str
+
+
+class ConversationStart(BaseModel):
+    username: str = Field(min_length=1, max_length=255)
+
+    @field_validator("username")
+    @classmethod
+    def normalize_username(cls, username: str) -> str:
+        username = username.strip()
+        if not username:
+            raise ValueError("Username cannot be blank.")
+        return username
+
+
+class MessageCreate(BaseModel):
+    content: str = Field(min_length=1, max_length=5000)
+
+    @field_validator("content")
+    @classmethod
+    def normalize_content(cls, content: str) -> str:
+        content = content.strip()
+        if not content:
+            raise ValueError("Message cannot be blank.")
+        return content
+
+
+class MessagePreview(BaseModel):
+    id: int
+    content: str
+    sender_id: int
+    created_at: datetime
+
+
+class ConversationRead(BaseModel):
+    id: int
+    other_user: UserSearchRead
+    last_message: MessagePreview | None = None
+    created_at: datetime
+
+
+class MessageRead(BaseModel):
+    id: int
+    conversation_id: int
+    sender_id: int
+    sender_username: str
+    content: str
+    created_at: datetime
