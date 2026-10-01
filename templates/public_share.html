@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="no-referrer">
+    <title>Shared note - NoteSphereX</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%238bc5a5'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M12%202L2%207l10%205%2010-5-10-5z'/%3E%3Cpath%20d='M2%2017l10%205%2010-5'/%3E%3Cpath%20d='M2%2012l10%205%2010-5'/%3E%3C/svg%3E">
+    <script src="/static/js/theme.js"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/public-share.js" defer></script>
+</head>
+<body class="public-share-body">
+    <main class="public-share-page" id="publicSharePage">
+        <a class="public-share-brand" href="/" aria-label="NoteSphereX">
+            <span class="dash-brand-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </span>
+            <span class="dash-brand-name">NoteSphereX</span>
+        </a>
+        <section class="public-note-card" aria-live="polite">
+            <p class="public-note-loading" id="publicNoteLoading" role="status">Loading shared note...</p>
+            <article id="publicNote" hidden>
+                <p class="public-note-eyebrow">Shared via NoteSphereX</p>
+                <h1 id="publicNoteTitle"></h1>
+                <div class="public-note-content" id="publicNoteContent"></div>
+            </article>
+            <section class="public-note-unavailable" id="publicNoteUnavailable" hidden>
+                <h1>Shared note unavailable</h1>
+                <p>This link is invalid or no longer available.</p>
+            </section>
+        </section>
+        <footer class="public-share-footer">Shared via NoteSphereX. Join now!</footer>
+    </main>
+</body>
+</html>

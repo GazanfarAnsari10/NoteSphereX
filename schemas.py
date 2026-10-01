@@ -138,3 +138,27 @@ class SharedNoteRead(BaseModel):
     content: str
     category: NoteCategory
     shared_by: str
+
+
+class NotePublicShareStatus(BaseModel):
+    active: bool
+    created_at: datetime | None = None
+    share_url: str | None = None
+
+
+class PublicShareLookup(BaseModel):
+    token: str = Field(min_length=32, max_length=128)
+
+    @field_validator("token")
+    @classmethod
+    def validate_token_characters(cls, token: str) -> str:
+        import re
+
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", token):
+            raise ValueError("This link is invalid or no longer available.")
+        return token
+
+
+class PublicShareNoteRead(BaseModel):
+    title: str
+    content: str

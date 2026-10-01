@@ -184,21 +184,41 @@
                     </header>
                     <div class="note-share-channel-row">
                         <span>Share using</span>
-                        <button class="note-share-channel is-active" type="button" aria-pressed="true" disabled>Internal</button>
+                        <div class="note-share-channel-options" role="group" aria-label="Share type">
+                            <button class="note-share-channel is-active" id="noteShareInternalTab" type="button" aria-pressed="true">Internal</button>
+                            <button class="note-share-channel" id="noteShareGlobalTab" type="button" aria-pressed="false">Global</button>
+                        </div>
                     </div>
-                    <label class="note-share-label" for="noteShareConversation">Choose a conversation</label>
-                    <select class="note-share-input" id="noteShareConversation">
-                        <option value="">Select a conversation</option>
-                    </select>
-                    <div class="note-share-or">or search for a user</div>
-                    <label class="note-share-label" for="noteShareUserSearch">Search by username</label>
-                    <input class="note-share-input" id="noteShareUserSearch" type="search" maxlength="100" placeholder="Enter a username" autocomplete="off">
-                    <div class="note-share-results" id="noteShareUserResults" role="listbox" aria-label="Matching users" hidden></div>
-                    <p class="note-share-status" id="noteShareStatus" role="status" aria-live="polite" hidden></p>
-                    <footer class="note-share-dialog-actions">
-                        <button class="note-share-cancel" id="cancelNoteShare" type="button">Cancel</button>
-                        <button class="note-share-confirm" id="confirmNoteShare" type="button">Share note</button>
-                    </footer>
+                    <section class="note-share-panel" id="noteShareInternalPanel" aria-label="Internal sharing">
+                        <label class="note-share-label" for="noteShareConversation">Choose a conversation</label>
+                        <select class="note-share-input" id="noteShareConversation">
+                            <option value="">Select a conversation</option>
+                        </select>
+                        <div class="note-share-or">or search for a user</div>
+                        <label class="note-share-label" for="noteShareUserSearch">Search by username</label>
+                        <input class="note-share-input" id="noteShareUserSearch" type="search" maxlength="100" placeholder="Enter a username" autocomplete="off">
+                        <div class="note-share-results" id="noteShareUserResults" role="listbox" aria-label="Matching users" hidden></div>
+                        <p class="note-share-status" id="noteShareStatus" role="status" aria-live="polite" hidden></p>
+                        <footer class="note-share-dialog-actions">
+                            <button class="note-share-cancel" id="cancelNoteShare" type="button">Cancel</button>
+                            <button class="note-share-confirm" id="confirmNoteShare" type="button">Share note</button>
+                        </footer>
+                    </section>
+                    <section class="note-share-panel" id="noteShareGlobalPanel" aria-label="Global sharing" hidden>
+                        <p class="note-share-global-description">Anyone with this link can view this note. The link cannot edit your note.</p>
+                        <p class="note-share-global-state" id="globalShareState" role="status" aria-live="polite">Checking link status...</p>
+                        <label class="note-share-label" for="globalShareLink">Public link</label>
+                        <input class="note-share-input" id="globalShareLink" type="url" readonly placeholder="Create a link to share">
+                        <div class="note-share-global-actions">
+                            <button class="note-share-cancel" id="createGlobalShare" type="button">Create link</button>
+                            <button class="note-share-confirm" id="copyGlobalShare" type="button" disabled>Copy link</button>
+                            <button class="note-share-revoke" id="revokeGlobalShare" type="button" hidden>Revoke</button>
+                        </div>
+                        <p class="note-share-status" id="globalShareStatus" role="status" aria-live="polite" hidden></p>
+                        <footer class="note-share-dialog-actions">
+                            <button class="note-share-cancel" id="closeGlobalShare" type="button">Done</button>
+                        </footer>
+                    </section>
                 </div>
             </dialog>
         </div>

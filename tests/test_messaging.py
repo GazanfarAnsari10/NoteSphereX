@@ -1,6 +1,10 @@
 import unittest
+import json
+import re
+from unittest.mock import patch
 
 from fastapi import HTTPException
+from fastapi import Request
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
@@ -19,7 +23,17 @@ from messaging import (
     start_conversation,
 )
 from models import Conversation, Message, Note, User
-from schemas import ConversationStart, MessageCreate, NoteShareCreate
+from public_shares import (
+    PUBLIC_RESPONSE_HEADERS,
+    UNAVAILABLE_DETAIL,
+    build_share_url,
+    create_or_regenerate_public_share,
+    get_public_share_status,
+    resolve_public_share,
+    revoke_public_share,
+    token_digest,
+)
+from schemas import ConversationStart, MessageCreate, NoteShareCreate, PublicShareLookup
 
 
 class MessagingApiTests(unittest.TestCase):
@@ -191,6 +205,88 @@ class MessagingApiTests(unittest.TestCase):
         with self.assertRaises(HTTPException) as invalid_token:
             get_current_user(HTTPAuthorizationCredentials(scheme="Bearer", credentials="invalid"))
         self.assertEqual(invalid_token.exception.status_code, 401)
+
+    def test_global_share_hashes_tokens_limits_access_and_revokes(self):
+        note = Note(
+            user_id=self.alice.id,
+            title="<img src=x onerror=alert(1)>",
+            content="<script>alert(1)</script>",
+            category="Work",
+        )
+        self.db.add(note)
+        self.db.commit()
+        request = Request({
+            "type": "http",
+            "http_version": "1.1",
+            "scheme": "http",
+            "server": ("localhost", 8123),
+            "client": ("127.0.0.1", 50000),
+            "method": "POST",
+            "path": "/notes/1/public-share",
+            "raw_path": b"/notes/1/public-share",
+            "query_string": b"",
+            "headers": [],
+        })
+
+        with patch.dict("os.environ", {"PUBLIC_BASE_URL": "https://notespherex.onrender.com"}):
+            created = create_or_regenerate_public_share(note.id, request, "alice", self.db)
+        first_token = created.share_url.split("#token=", 1)[1]
+
+        with patch.dict("os.environ", {"PUBLIC_BASE_URL": "https://bad.example/path"}):
+            with self.assertRaises(HTTPException) as invalid_base:
+                create_or_regenerate_public_share(note.id, request, "alice", self.db)
+        self.assertEqual(invalid_base.exception.status_code, 503)
+        self.assertEqual(get_public_share_status(note.id, "alice", self.db).active, True)
+
+        with patch.dict("os.environ", {"PUBLIC_BASE_URL": "https://notespherex.onrender.com"}):
+            regenerated = create_or_regenerate_public_share(note.id, request, "alice", self.db)
+
+        second_token = regenerated.share_url.split("#token=", 1)[1]
+        self.assertRegex(first_token, re.compile(r"^[A-Za-z0-9_-]{43}$"))
+        self.assertNotEqual(first_token, second_token)
+        stored_share = self.db.query(__import__("models").NotePublicShare).filter_by(note_id=note.id).one()
+        self.assertEqual(stored_share.token_hash, token_digest(second_token))
+        self.assertNotEqual(stored_share.token_hash, second_token)
+        self.assertTrue(get_public_share_status(note.id, "alice", self.db).active)
+
+        public_response = resolve_public_share(PublicShareLookup(token=second_token), self.db)
+        payload = json.loads(public_response.body)
+        self.assertEqual(set(payload), {"title", "content"})
+        self.assertIn("<script>", payload["content"])
+        for name, value in PUBLIC_RESPONSE_HEADERS.items():
+            self.assertEqual(public_response.headers[name.lower()], value)
+
+        invalid_response = resolve_public_share(PublicShareLookup(token=first_token), self.db)
+        self.assertEqual(invalid_response.status_code, 404)
+        self.assertEqual(json.loads(invalid_response.body)["detail"], UNAVAILABLE_DETAIL)
+        self.assertEqual(resolve_public_share(PublicShareLookup(token="a" * 43), self.db).status_code, 404)
+
+        for operation in (
+            lambda: get_public_share_status(note.id, "bob", self.db),
+            lambda: create_or_regenerate_public_share(note.id, request, "bob", self.db),
+            lambda: revoke_public_share(note.id, "bob", self.db),
+        ):
+            with self.assertRaises(HTTPException) as unauthorized:
+                operation()
+            self.assertEqual(unauthorized.exception.status_code, 404)
+
+        revoked = revoke_public_share(note.id, "alice", self.db)
+        self.assertFalse(revoked.active)
+        unavailable = resolve_public_share(PublicShareLookup(token=second_token), self.db)
+        self.assertEqual(unavailable.status_code, 404)
+        self.assertEqual(json.loads(unavailable.body)["detail"], UNAVAILABLE_DETAIL)
+
+        with patch.dict("os.environ", {"PUBLIC_BASE_URL": "https://notespherex.onrender.com"}):
+            fresh_link = create_or_regenerate_public_share(note.id, request, "alice", self.db)
+        fresh_token = fresh_link.share_url.split("#token=", 1)[1]
+        self.db.delete(note)
+        self.db.commit()
+        self.assertEqual(self.db.query(__import__("models").NotePublicShare).filter_by(note_id=note.id).count(), 0)
+        deleted = resolve_public_share(PublicShareLookup(token=fresh_token), self.db)
+        self.assertEqual(deleted.status_code, 404)
+        self.assertEqual(json.loads(deleted.body)["detail"], UNAVAILABLE_DETAIL)
+        with patch.dict("os.environ", {"PUBLIC_BASE_URL": ""}):
+            self.assertTrue(build_share_url(request, "a" * 43).startswith("http://localhost:8123/share#token="))
 
 
 if __name__ == "__main__":

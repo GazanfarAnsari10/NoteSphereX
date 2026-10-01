@@ -11,6 +11,7 @@ from models import User, Note
 from schemas import PasswordChange, UserRegister, UserLogin, UserPublic, Note as NoteSchema, NoteRead, NoteBulkDelete
 from auth import hash_password, verify_password, create_token, get_current_user
 from messaging import router as messaging_router
+from public_shares import PUBLIC_RESPONSE_HEADERS, router as public_shares_router
 
 app = FastAPI(
     title="Notes API",
@@ -18,6 +19,7 @@ app = FastAPI(
     version="1.0.0"
 )
 app.include_router(messaging_router)
+app.include_router(public_shares_router)
 
 
 @app.exception_handler(RequestValidationError)
@@ -26,7 +28,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         {key: value for key, value in error.items() if key != "input"}
         for error in exc.errors()
     ]
-    return JSONResponse(status_code=422, content={"detail": errors})
+    headers = PUBLIC_RESPONSE_HEADERS if request.url.path == "/public/shares/resolve" else None
+    return JSONResponse(status_code=422, content={"detail": errors}, headers=headers)
 
 Base.metadata.create_all(bind=engine)
 upgrade_note_metadata()
@@ -71,6 +74,20 @@ def settings_page(request: Request):
 @app.get("/messages")
 def messages_page(request: Request):
     return templates.TemplateResponse(request, "messages.html")
+
+@app.get("/share", include_in_schema=False)
+def public_share_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "public_share.html",
+        headers={
+            **PUBLIC_RESPONSE_HEADERS,
+            "Content-Security-Policy": (
+                "default-src 'self'; script-src 'self'; style-src 'self'; "
+                "img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+            ),
+        },
+    )
 
 
 # ----------------------------

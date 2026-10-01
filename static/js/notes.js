@@ -22,6 +22,16 @@ const noteShareUserSearch = document.getElementById("noteShareUserSearch")
 const noteShareUserResults = document.getElementById("noteShareUserResults")
 const noteShareStatus = document.getElementById("noteShareStatus")
 const confirmNoteShareButton = document.getElementById("confirmNoteShare")
+const noteShareInternalTab = document.getElementById("noteShareInternalTab")
+const noteShareGlobalTab = document.getElementById("noteShareGlobalTab")
+const noteShareInternalPanel = document.getElementById("noteShareInternalPanel")
+const noteShareGlobalPanel = document.getElementById("noteShareGlobalPanel")
+const globalShareState = document.getElementById("globalShareState")
+const globalShareLink = document.getElementById("globalShareLink")
+const createGlobalShareButton = document.getElementById("createGlobalShare")
+const copyGlobalShareButton = document.getElementById("copyGlobalShare")
+const revokeGlobalShareButton = document.getElementById("revokeGlobalShare")
+const globalShareStatus = document.getElementById("globalShareStatus")
 const noteComposer = document.getElementById("noteComposer")
 const createNoteButton = document.getElementById("createNoteButton")
 const noteTitleInput = document.getElementById("noteTitle")
@@ -39,6 +49,8 @@ let selectionMode = false
 const selectedNoteIds = new Set()
 let noteToShare = null
 let noteShareSearchTimer = null
+let currentGlobalShareUrl = ""
+let globalShareActive = false
 
 function setEditorMode(isEditing) {
     noteSubmitLabel.textContent = isEditing ? "Done" : "Add Note"
@@ -254,6 +266,12 @@ deleteSelectedButton.addEventListener("click", deleteSelectedNotes)
 document.getElementById("closeNoteShare").addEventListener("click", () => noteShareDialog.close())
 document.getElementById("cancelNoteShare").addEventListener("click", () => noteShareDialog.close())
 confirmNoteShareButton.addEventListener("click", confirmNoteShare)
+document.getElementById("closeGlobalShare").addEventListener("click", () => noteShareDialog.close())
+noteShareInternalTab.addEventListener("click", () => selectShareMode("internal"))
+noteShareGlobalTab.addEventListener("click", () => selectShareMode("global"))
+createGlobalShareButton.addEventListener("click", createGlobalShare)
+copyGlobalShareButton.addEventListener("click", copyGlobalShare)
+revokeGlobalShareButton.addEventListener("click", revokeGlobalShare)
 
 noteShareUserSearch.addEventListener("input", () => {
     clearTimeout(noteShareSearchTimer)
@@ -396,6 +414,128 @@ function selectShareConversation(conversation) {
     showNoteShareStatus(`Conversation with ${conversation.other_user.username} selected.`)
 }
 
+function showGlobalShareStatus(message, state = "") {
+    globalShareStatus.textContent = message
+    globalShareStatus.hidden = !message
+    globalShareStatus.dataset.state = state
+}
+
+function selectShareMode(mode) {
+    const isGlobal = mode === "global"
+    noteShareInternalTab.classList.toggle("is-active", !isGlobal)
+    noteShareGlobalTab.classList.toggle("is-active", isGlobal)
+    noteShareInternalTab.setAttribute("aria-pressed", String(!isGlobal))
+    noteShareGlobalTab.setAttribute("aria-pressed", String(isGlobal))
+    noteShareInternalPanel.hidden = isGlobal
+    noteShareGlobalPanel.hidden = !isGlobal
+    if (isGlobal) loadGlobalShareStatus()
+}
+
+async function loadGlobalShareStatus() {
+    if (!noteToShare) return
+    globalShareState.textContent = "Checking link status..."
+    globalShareState.dataset.state = ""
+    showGlobalShareStatus("")
+    try {
+        const status = await requestNoteShareApi(`/notes/${noteToShare.id}/public-share`)
+        globalShareActive = status.active
+        globalShareState.textContent = status.active
+            ? "A public link is active. Regenerating it will invalidate the previous link."
+            : "This note is not shared publicly."
+        globalShareState.dataset.state = status.active ? "active" : ""
+        createGlobalShareButton.textContent = status.active ? "Regenerate link" : "Create link"
+        revokeGlobalShareButton.hidden = !status.active
+        copyGlobalShareButton.disabled = !currentGlobalShareUrl
+        globalShareLink.value = currentGlobalShareUrl
+    } catch (error) {
+        globalShareState.textContent = "Unable to check public link status."
+        globalShareState.dataset.state = "error"
+        showGlobalShareStatus(error.message, "error")
+    }
+}
+
+async function createGlobalShare() {
+    if (!noteToShare) return
+    if (globalShareActive && !confirm("Regenerate this link? The current public link will stop working.")) return
+
+    createGlobalShareButton.disabled = true
+    showGlobalShareStatus(globalShareActive ? "Regenerating link..." : "Creating link...")
+    try {
+        const result = await requestNoteShareApi(`/notes/${noteToShare.id}/public-share`, {
+            method: "POST"
+        })
+        currentGlobalShareUrl = result.share_url
+        globalShareLink.value = currentGlobalShareUrl
+        globalShareActive = true
+        globalShareState.textContent = "A public link is active. Anyone with it can view this note."
+        globalShareState.dataset.state = "active"
+        createGlobalShareButton.textContent = "Regenerate link"
+        revokeGlobalShareButton.hidden = false
+        copyGlobalShareButton.disabled = !currentGlobalShareUrl
+        showGlobalShareStatus("Link ready to copy.", "success")
+    } catch (error) {
+        showGlobalShareStatus(error.message, "error")
+    } finally {
+        createGlobalShareButton.disabled = false
+    }
+}
+
+async function copyGlobalShare() {
+    if (!currentGlobalShareUrl) {
+        showGlobalShareStatus("Regenerate the link to copy a fresh URL.", "error")
+        return
+    }
+
+    copyGlobalShareButton.disabled = true
+    try {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(currentGlobalShareUrl)
+        } else {
+            const temporaryInput = document.createElement("textarea")
+            temporaryInput.value = currentGlobalShareUrl
+            temporaryInput.setAttribute("readonly", "")
+            temporaryInput.style.position = "fixed"
+            temporaryInput.style.opacity = "0"
+            document.body.appendChild(temporaryInput)
+            temporaryInput.select()
+            const copied = document.execCommand("copy")
+            temporaryInput.remove()
+            if (!copied) throw new Error("Clipboard access is unavailable.")
+        }
+        showGlobalShareStatus("Link copied.", "success")
+    } catch {
+        showGlobalShareStatus("Could not copy the link. Select and copy it from the field.", "error")
+        globalShareLink.focus()
+        globalShareLink.select()
+    } finally {
+        copyGlobalShareButton.disabled = !currentGlobalShareUrl
+    }
+}
+
+async function revokeGlobalShare() {
+    if (!noteToShare || !globalShareActive) return
+    if (!confirm("Revoke this link? Anyone who has it will no longer be able to view the note.")) return
+
+    revokeGlobalShareButton.disabled = true
+    showGlobalShareStatus("Revoking link...")
+    try {
+        await requestNoteShareApi(`/notes/${noteToShare.id}/public-share`, { method: "DELETE" })
+        globalShareActive = false
+        currentGlobalShareUrl = ""
+        globalShareLink.value = ""
+        globalShareState.textContent = "This note is not shared publicly."
+        globalShareState.dataset.state = ""
+        createGlobalShareButton.textContent = "Create link"
+        copyGlobalShareButton.disabled = true
+        revokeGlobalShareButton.hidden = true
+        showGlobalShareStatus("Link revoked.", "success")
+    } catch (error) {
+        showGlobalShareStatus(error.message, "error")
+    } finally {
+        revokeGlobalShareButton.disabled = false
+    }
+}
+
 async function openNoteShare(note) {
     noteToShare = note
     noteShareNoteTitle.textContent = note.title?.trim() || "Untitled note"
@@ -403,6 +543,16 @@ async function openNoteShare(note) {
     noteShareUserSearch.value = ""
     noteShareUserResults.replaceChildren()
     noteShareUserResults.hidden = true
+    currentGlobalShareUrl = ""
+    globalShareLink.value = ""
+    globalShareActive = false
+    globalShareState.textContent = "Select Global to check link status."
+    globalShareState.dataset.state = ""
+    globalShareStatus.hidden = true
+    createGlobalShareButton.disabled = false
+    copyGlobalShareButton.disabled = true
+    revokeGlobalShareButton.hidden = true
+    selectShareMode("internal")
     confirmNoteShareButton.disabled = false
     confirmNoteShareButton.textContent = "Share note"
     showNoteShareStatus("Loading conversations...")

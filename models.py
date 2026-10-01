@@ -47,6 +47,12 @@ class Note(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="notes")
+    public_share = relationship(
+        "NotePublicShare",
+        back_populates="note",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
 
 
 class Conversation(Base):
@@ -126,3 +132,20 @@ class Message(Base):
     conversation = relationship("Conversation", back_populates="messages")
     sender = relationship("User", back_populates="sent_messages")
     shared_note = relationship("Note", foreign_keys=[shared_note_id])
+
+
+class NotePublicShare(Base):
+    __tablename__ = "note_public_shares"
+
+    id = Column(Integer, primary_key=True, index=True)
+    note_id = Column(Integer, ForeignKey("notes.id", ondelete="CASCADE"), nullable=False, unique=True)
+    token_hash = Column(String(64), nullable=False, unique=True, index=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=func.now(),
+        server_default=func.now(),
+    )
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+
+    note = relationship("Note", back_populates="public_share")
