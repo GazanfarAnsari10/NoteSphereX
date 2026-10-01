@@ -56,6 +56,42 @@ def upgrade_note_metadata():
             END $$;
         """))
 
+
+def upgrade_message_note_shares():
+    with engine.begin() as connection:
+        connection.execute(text(
+            "ALTER TABLE messages ADD COLUMN IF NOT EXISTS "
+            "message_type VARCHAR(20) NOT NULL DEFAULT 'text'"
+        ))
+        connection.execute(text(
+            "ALTER TABLE messages ADD COLUMN IF NOT EXISTS shared_note_id INTEGER"
+        ))
+        connection.execute(text(
+            "ALTER TABLE messages ADD COLUMN IF NOT EXISTS shared_note_title VARCHAR(160)"
+        ))
+        connection.execute(text("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conrelid = 'messages'::regclass
+                      AND conname = 'ck_messages_type'
+                ) THEN
+                    ALTER TABLE messages ADD CONSTRAINT ck_messages_type
+                    CHECK (message_type IN ('text', 'note_share'));
+                END IF;
+
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conrelid = 'messages'::regclass
+                      AND conname = 'fk_messages_shared_note_id'
+                ) THEN
+                    ALTER TABLE messages ADD CONSTRAINT fk_messages_shared_note_id
+                    FOREIGN KEY (shared_note_id) REFERENCES notes(id) ON DELETE SET NULL;
+                END IF;
+            END $$;
+        """))
+
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,

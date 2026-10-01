@@ -93,6 +93,12 @@ class Conversation(Base):
 
 class Message(Base):
     __tablename__ = "messages"
+    __table_args__ = (
+        CheckConstraint(
+            "message_type IN ('text', 'note_share')",
+            name="ck_messages_type",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     conversation_id = Column(
@@ -103,6 +109,13 @@ class Message(Base):
     )
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     content = Column(Text, nullable=False)
+    message_type = Column(String(20), nullable=False, default="text", server_default=text("'text'"))
+    shared_note_id = Column(
+        Integer,
+        ForeignKey("notes.id", ondelete="SET NULL", name="fk_messages_shared_note_id"),
+        nullable=True,
+    )
+    shared_note_title = Column(String(160), nullable=True)
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -112,3 +125,4 @@ class Message(Base):
 
     conversation = relationship("Conversation", back_populates="messages")
     sender = relationship("User", back_populates="sent_messages")
+    shared_note = relationship("Note", foreign_keys=[shared_note_id])

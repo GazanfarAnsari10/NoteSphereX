@@ -105,6 +105,9 @@ class MessagePreview(BaseModel):
     content: str
     sender_id: int
     created_at: datetime
+    message_type: Literal["text", "note_share"] = "text"
+    shared_note_title: str | None = None
+    shared_note_available: bool = False
 
 
 class ConversationRead(BaseModel):
@@ -121,3 +124,17 @@ class MessageRead(BaseModel):
     sender_username: str
     content: str
     created_at: datetime
+    message_type: Literal["text", "note_share"] = "text"
+    shared_note_title: str | None = None
+    shared_note_available: bool = False
+
+
+class NoteShareCreate(BaseModel):
+    note_id: int = Field(gt=0)
+
+
+class SharedNoteRead(BaseModel):
+    title: str
+    content: str
+    category: NoteCategory
+    shared_by: str

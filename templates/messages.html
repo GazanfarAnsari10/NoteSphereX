@@ -3,6 +3,7 @@
 <head>
     <title>Messages - NoteSphereX</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%238bc5a5'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M12%202L2%207l10%205%2010-5-10-5z'/%3E%3Cpath%20d='M2%2017l10%205%2010-5'/%3E%3Cpath%20d='M2%2012l10%205%2010-5'/%3E%3C/svg%3E">
     <script src="/static/js/theme.js"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -148,6 +149,20 @@
                     </section>
                 </section>
             </main>
+            <dialog class="shared-note-dialog" id="sharedNoteDialog" aria-labelledby="sharedNoteTitle">
+                <div class="shared-note-dialog-content">
+                    <header class="shared-note-dialog-header">
+                        <div>
+                            <p class="shared-note-readonly" id="sharedNoteAttribution"></p>
+                            <h2 id="sharedNoteTitle"></h2>
+                        </div>
+                        <button class="note-share-close" id="closeSharedNote" type="button" aria-label="Close shared note">&times;</button>
+                    </header>
+                    <p class="shared-note-category" id="sharedNoteCategory"></p>
+                    <div class="shared-note-content" id="sharedNoteContent"></div>
+                    <p class="shared-note-status" id="sharedNoteStatus" role="status" aria-live="polite" hidden></p>
+                </div>
+            </dialog>
         </div>
     </div>
 

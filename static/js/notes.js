@@ -15,6 +15,13 @@ const selectAllNotes = document.getElementById("selectAllNotes")
 const selectedNoteCount = document.getElementById("selectedNoteCount")
 const deleteSelectedButton = document.getElementById("deleteSelectedButton")
 const bulkDeleteStatus = document.getElementById("bulkDeleteStatus")
+const noteShareDialog = document.getElementById("noteShareDialog")
+const noteShareNoteTitle = document.getElementById("noteShareNoteTitle")
+const noteShareConversation = document.getElementById("noteShareConversation")
+const noteShareUserSearch = document.getElementById("noteShareUserSearch")
+const noteShareUserResults = document.getElementById("noteShareUserResults")
+const noteShareStatus = document.getElementById("noteShareStatus")
+const confirmNoteShareButton = document.getElementById("confirmNoteShare")
 const noteComposer = document.getElementById("noteComposer")
 const createNoteButton = document.getElementById("createNoteButton")
 const noteTitleInput = document.getElementById("noteTitle")
@@ -30,6 +37,8 @@ let savingNote = false
 let notesRefreshPending = false
 let selectionMode = false
 const selectedNoteIds = new Set()
+let noteToShare = null
+let noteShareSearchTimer = null
 
 function setEditorMode(isEditing) {
     noteSubmitLabel.textContent = isEditing ? "Done" : "Add Note"
@@ -242,6 +251,15 @@ selectAllNotes.addEventListener("change", () => {
 })
 
 deleteSelectedButton.addEventListener("click", deleteSelectedNotes)
+document.getElementById("closeNoteShare").addEventListener("click", () => noteShareDialog.close())
+document.getElementById("cancelNoteShare").addEventListener("click", () => noteShareDialog.close())
+confirmNoteShareButton.addEventListener("click", confirmNoteShare)
+
+noteShareUserSearch.addEventListener("input", () => {
+    clearTimeout(noteShareSearchTimer)
+    const query = noteShareUserSearch.value.trim()
+    noteShareSearchTimer = setTimeout(() => searchShareUsers(query), 250)
+})
 
 function setSidebarOpen(isOpen, restoreFocus = false) {
     dashLayout.classList.toggle("is-sidebar-open", isOpen)
@@ -336,6 +354,142 @@ function createNoteActionButton(label, classNames, iconMarkup) {
     button.title = label
     button.innerHTML = iconMarkup
     return button
+}
+
+function showNoteShareStatus(message, isError = false) {
+    noteShareStatus.textContent = message
+    noteShareStatus.hidden = !message
+    noteShareStatus.dataset.state = isError ? "error" : ""
+}
+
+async function requestNoteShareApi(path, options = {}) {
+    const response = await fetch(path, {
+        ...options,
+        headers: {
+            Authorization: `Bearer ${token}`,
+            ...(options.headers || {})
+        }
+    })
+    const payload = await response.json().catch(() => ({}))
+
+    if (response.status === 401) {
+        logout(true)
+        throw new Error("Your session has expired. Please log in again.")
+    }
+    if (!response.ok) {
+        if (typeof payload.detail === "string") throw new Error(payload.detail)
+        throw new Error("Could not share the note. Please try again.")
+    }
+    return payload
+}
+
+function selectShareConversation(conversation) {
+    const value = String(conversation.id)
+    let option = Array.from(noteShareConversation.options).find(item => item.value === value)
+    if (!option) {
+        option = document.createElement("option")
+        option.value = value
+        option.textContent = conversation.other_user.username
+        noteShareConversation.appendChild(option)
+    }
+    noteShareConversation.value = value
+    showNoteShareStatus(`Conversation with ${conversation.other_user.username} selected.`)
+}
+
+async function openNoteShare(note) {
+    noteToShare = note
+    noteShareNoteTitle.textContent = note.title?.trim() || "Untitled note"
+    noteShareConversation.replaceChildren(new Option("Select a conversation", ""))
+    noteShareUserSearch.value = ""
+    noteShareUserResults.replaceChildren()
+    noteShareUserResults.hidden = true
+    confirmNoteShareButton.disabled = false
+    confirmNoteShareButton.textContent = "Share note"
+    showNoteShareStatus("Loading conversations...")
+    noteShareDialog.showModal()
+
+    try {
+        const conversations = await requestNoteShareApi("/messages/conversations")
+        conversations.forEach(conversation => {
+            const option = document.createElement("option")
+            option.value = String(conversation.id)
+            option.textContent = conversation.other_user.username
+            noteShareConversation.appendChild(option)
+        })
+        showNoteShareStatus(conversations.length ? "" : "No conversations yet. Search for a user to start one.")
+    } catch (error) {
+        showNoteShareStatus(error.message, true)
+    }
+}
+
+async function searchShareUsers(query) {
+    noteShareUserResults.replaceChildren()
+    noteShareUserResults.hidden = true
+    if (!query) {
+        showNoteShareStatus("")
+        return
+    }
+
+    try {
+        const users = await requestNoteShareApi(`/messages/users?query=${encodeURIComponent(query)}`)
+        if (!users.length) {
+            showNoteShareStatus(`No users found for "${query}".`)
+            return
+        }
+
+        users.forEach(user => {
+            const button = document.createElement("button")
+            button.type = "button"
+            button.className = "note-share-result"
+            button.setAttribute("role", "option")
+            button.textContent = user.username
+            button.addEventListener("click", async () => {
+                button.disabled = true
+                showNoteShareStatus("Opening conversation...")
+                try {
+                    const conversation = await requestNoteShareApi("/messages/conversations", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ username: user.username })
+                    })
+                    selectShareConversation(conversation)
+                    noteShareUserResults.hidden = true
+                    noteShareUserSearch.value = ""
+                } catch (error) {
+                    button.disabled = false
+                    showNoteShareStatus(error.message, true)
+                }
+            })
+            noteShareUserResults.appendChild(button)
+        })
+        noteShareUserResults.hidden = false
+        showNoteShareStatus("")
+    } catch (error) {
+        showNoteShareStatus(error.message, true)
+    }
+}
+
+async function confirmNoteShare() {
+    const conversationId = noteShareConversation.value
+    if (!noteToShare || !conversationId) {
+        showNoteShareStatus("Choose a conversation or search for a user first.", true)
+        return
+    }
+
+    confirmNoteShareButton.disabled = true
+    showNoteShareStatus("Sharing note...")
+    try {
+        await requestNoteShareApi(`/messages/conversations/${conversationId}/note-shares`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ note_id: noteToShare.id })
+        })
+        confirmNoteShareButton.textContent = "Shared"
+        showNoteShareStatus("Note shared successfully.")
+    } catch (error) {
+        confirmNoteShareButton.disabled = false
+        showNoteShareStatus(error.message, true)
+    }
 }
 
 async function openExistingNote(note) {
@@ -443,6 +597,16 @@ function renderNotes() {
         const actions = document.createElement("div")
         actions.classList.add("note-actions")
 
+        const shareBtn = createNoteActionButton(
+            "Share note",
+            "note-btn note-btn-share",
+            '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.7 6.8-4.4m-6.8 7 6.8 4.1"/></svg><span>Share</span>'
+        )
+        shareBtn.addEventListener("click", event => {
+            event.stopPropagation()
+            openNoteShare(note)
+        })
+
         const deleteBtn = createNoteActionButton(
             "Delete note",
             "note-btn note-btn-delete note-btn-icon",
@@ -453,7 +617,7 @@ function renderNotes() {
             deleteNote(note.id)
         }
 
-        actions.appendChild(deleteBtn)
+        actions.append(shareBtn, deleteBtn)
 
         div.appendChild(heading)
         div.appendChild(text)

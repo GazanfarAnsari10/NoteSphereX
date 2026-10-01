@@ -5,13 +5,15 @@ from sqlalchemy.orm import Session
 
 from auth import get_current_user
 from database import SessionLocal
-from models import Conversation, Message, User
+from models import Conversation, Message, Note, User
 from schemas import (
     ConversationRead,
     ConversationStart,
     MessageCreate,
     MessagePreview,
     MessageRead,
+    NoteShareCreate,
+    SharedNoteRead,
     UserSearchRead,
 )
 
@@ -69,6 +71,9 @@ def conversation_response(
             content=last_message.content,
             sender_id=last_message.sender_id,
             created_at=last_message.created_at,
+            message_type=last_message.message_type,
+            shared_note_title=last_message.shared_note_title,
+            shared_note_available=last_message.shared_note_id is not None,
         )
     return ConversationRead(
         id=conversation.id,
@@ -86,6 +91,9 @@ def message_response(message: Message, sender_username: str) -> MessageRead:
         sender_username=sender_username,
         content=message.content,
         created_at=message.created_at,
+        message_type=message.message_type,
+        shared_note_title=message.shared_note_title,
+        shared_note_available=message.shared_note_id is not None,
     )
 
 
@@ -278,3 +286,74 @@ def send_message(
     db.commit()
     db.refresh(message)
     return message_response(message, current_user.username)
+
+
+@router.post(
+    "/conversations/{conversation_id}/note-shares",
+    response_model=MessageRead,
+    status_code=201,
+)
+def share_note(
+    conversation_id: int,
+    request: NoteShareCreate,
+    current_user: User = Depends(get_authenticated_user),
+    db: Session = Depends(get_db),
+):
+    get_participant_conversation(conversation_id, current_user, db)
+    note = (
+        db.query(Note)
+        .filter(Note.id == request.note_id, Note.user_id == current_user.id)
+        .first()
+    )
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    message = Message(
+        conversation_id=conversation_id,
+        sender_id=current_user.id,
+        content="Shared a note",
+        message_type="note_share",
+        shared_note_id=note.id,
+        shared_note_title=note.title or "Untitled note",
+    )
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+    return message_response(message, current_user.username)
+
+
+@router.get(
+    "/conversations/{conversation_id}/note-shares/{message_id}",
+    response_model=SharedNoteRead,
+)
+def get_shared_note(
+    conversation_id: int,
+    message_id: int,
+    current_user: User = Depends(get_authenticated_user),
+    db: Session = Depends(get_db),
+):
+    get_participant_conversation(conversation_id, current_user, db)
+    message = (
+        db.query(Message)
+        .filter(
+            Message.id == message_id,
+            Message.conversation_id == conversation_id,
+            Message.message_type == "note_share",
+            Message.shared_note_id.is_not(None),
+        )
+        .first()
+    )
+    if not message:
+        raise HTTPException(status_code=404, detail="Shared note is no longer available")
+
+    note = db.query(Note).filter(Note.id == message.shared_note_id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Shared note is no longer available")
+
+    sender = db.query(User).filter(User.id == message.sender_id).first()
+    return SharedNoteRead(
+        title=note.title or "Untitled note",
+        content=note.content or "",
+        category=note.category,
+        shared_by=sender.username if sender else "NoteSphereX user",
+    )

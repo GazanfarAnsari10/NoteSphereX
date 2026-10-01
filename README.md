@@ -120,7 +120,7 @@ source myenv/bin/activate
 <h3>7. Run the Application</h3>
 <pre>uvicorn main:app --reload</pre>
 
-<p>On startup, SQLAlchemy creates missing tables additively, including the messaging tables; it does not alter or remove existing note data. The application also applies an idempotent PostgreSQL schema update that adds title, category, and last-modified columns to existing notes. Existing note content is preserved. For first deployment of messaging, the database role needs permission to create tables and sequences in the target schema. If note metadata has not yet been applied, the role also needs permission to alter the notes table. No migration framework is used.</p>
+<p>On startup, SQLAlchemy creates missing tables additively. Idempotent PostgreSQL schema updates add note metadata to older Notes tables and the message type, nullable shared-note reference, and title snapshot to older Messages tables; existing notes and text messages remain unchanged. The database role needs permission to create tables/sequences and alter the Notes and Messages tables during deployment. Shared-note foreign keys use <code>ON DELETE SET NULL</code>, preserving message cards and their title snapshots if an original note is deleted. No migration framework is used.</p>
 
 <h3>8. Open in Browser</h3>
 <pre>http://127.0.0.1:8000</pre>
@@ -139,6 +139,8 @@ GET    /messages/conversations
 POST   /messages/conversations
 GET    /messages/conversations/{id}/messages
 POST   /messages/conversations/{id}/messages
+POST   /messages/conversations/{conversation_id}/note-shares
+GET    /messages/conversations/{conversation_id}/note-shares/{message_id}
 POST   /notes
 GET    /notes
 PUT    /notes/{id}
@@ -175,9 +177,9 @@ Token Sent in Headers → Backend Validates → Access Granted
 <h3>Messaging Tables</h3>
 <ul>
   <li><code>conversations</code>: id, two distinct ordered participant user IDs, created_at; a unique participant-pair constraint prevents duplicate conversations.</li>
-  <li><code>messages</code>: id, conversation_id, sender_id, text content, created_at.</li>
+  <li><code>messages</code>: id, conversation_id, sender_id, content, created_at, message_type, nullable shared_note_id, and share-time title snapshot.</li>
 </ul>
-<p>All messaging endpoints require the existing bearer JWT and only return or accept messages for conversations in which the authenticated user participates. Message history is returned in ascending order; the messages endpoint accepts optional <code>limit</code> and <code>before_id</code> query parameters for paging.</p>
+<p>All messaging endpoints require the existing bearer JWT and only return or accept messages for conversations in which the authenticated user participates. Notes can only be shared by their owner. Recipients read shared notes through the originating share message and conversation, using a read-only response. Cards show the title snapshot from share time, while an opened note shows current content if the original still exists. Message history is returned in ascending order; the messages endpoint accepts optional <code>limit</code> and <code>before_id</code> query parameters for paging.</p>
 
 <h3>Messaging Tests</h3>
 <pre>python -m unittest discover -s tests -v</pre>

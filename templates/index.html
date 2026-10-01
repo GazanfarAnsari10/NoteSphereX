@@ -173,6 +173,34 @@
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
             </button>
+            <dialog class="note-share-dialog" id="noteShareDialog" aria-labelledby="noteShareTitle">
+                <div class="note-share-dialog-content">
+                    <header class="note-share-dialog-header">
+                        <div>
+                            <h2 id="noteShareTitle">Share note</h2>
+                            <p id="noteShareNoteTitle" class="note-share-note-title"></p>
+                        </div>
+                        <button class="note-share-close" id="closeNoteShare" type="button" aria-label="Close share dialog">&times;</button>
+                    </header>
+                    <div class="note-share-channel-row">
+                        <span>Share using</span>
+                        <button class="note-share-channel is-active" type="button" aria-pressed="true" disabled>Internal</button>
+                    </div>
+                    <label class="note-share-label" for="noteShareConversation">Choose a conversation</label>
+                    <select class="note-share-input" id="noteShareConversation">
+                        <option value="">Select a conversation</option>
+                    </select>
+                    <div class="note-share-or">or search for a user</div>
+                    <label class="note-share-label" for="noteShareUserSearch">Search by username</label>
+                    <input class="note-share-input" id="noteShareUserSearch" type="search" maxlength="100" placeholder="Enter a username" autocomplete="off">
+                    <div class="note-share-results" id="noteShareUserResults" role="listbox" aria-label="Matching users" hidden></div>
+                    <p class="note-share-status" id="noteShareStatus" role="status" aria-live="polite" hidden></p>
+                    <footer class="note-share-dialog-actions">
+                        <button class="note-share-cancel" id="cancelNoteShare" type="button">Cancel</button>
+                        <button class="note-share-confirm" id="confirmNoteShare" type="button">Share note</button>
+                    </footer>
+                </div>
+            </dialog>
         </div>
     </div>
 

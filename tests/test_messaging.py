@@ -2,7 +2,7 @@ import unittest
 
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -11,13 +11,15 @@ from database import Base
 from messaging import (
     get_authenticated_user,
     get_messages,
+    get_shared_note,
     list_conversations,
     search_users,
+    share_note,
     send_message,
     start_conversation,
 )
-from models import Conversation, Message, User
-from schemas import ConversationStart, MessageCreate
+from models import Conversation, Message, Note, User
+from schemas import ConversationStart, MessageCreate, NoteShareCreate
 
 
 class MessagingApiTests(unittest.TestCase):
@@ -27,6 +29,11 @@ class MessagingApiTests(unittest.TestCase):
             "sqlite://",
             connect_args={"check_same_thread": False},
             poolclass=StaticPool,
+        )
+        event.listen(
+            cls.engine,
+            "connect",
+            lambda connection, record: connection.execute("PRAGMA foreign_keys=ON"),
         )
         Base.metadata.create_all(cls.engine)
         cls.session_factory = sessionmaker(bind=cls.engine, autoflush=False)
@@ -39,6 +46,7 @@ class MessagingApiTests(unittest.TestCase):
         self.db = self.session_factory()
         self.db.query(Message).delete()
         self.db.query(Conversation).delete()
+        self.db.query(Note).delete()
         self.db.query(User).delete()
         self.db.add_all(
             [
@@ -86,6 +94,7 @@ class MessagingApiTests(unittest.TestCase):
 
         history = get_messages(conversation.id, None, 100, self.bob, self.db)
         self.assertEqual(history[0].content, "Persisted message")
+        self.assertEqual(history[0].message_type, "text")
         self.assertEqual(list_conversations(self.bob, self.db)[0].last_message.content, "Persisted message")
 
         with self.assertRaises(HTTPException) as outsider_read:
@@ -94,6 +103,82 @@ class MessagingApiTests(unittest.TestCase):
             send_message(conversation.id, MessageCreate(content="intrusion"), self.cara, self.db)
         self.assertEqual(outsider_read.exception.status_code, 404)
         self.assertEqual(outsider_send.exception.status_code, 404)
+
+    def test_share_is_owner_and_participant_scoped_and_survives_note_deletion(self):
+        conversation = start_conversation(ConversationStart(username="bob"), self.alice, self.db)
+        note = Note(user_id=self.alice.id, title="Title at share time", content="Private body", category="Work")
+        other_owners_note = Note(
+            user_id=self.bob.id,
+            title="Bob's note",
+            content="Bob's private body",
+            category="Personal",
+        )
+        self.db.add_all([note, other_owners_note])
+        self.db.commit()
+
+        shared_message = share_note(
+            conversation.id,
+            NoteShareCreate(note_id=note.id),
+            self.alice,
+            self.db,
+        )
+        self.assertEqual(shared_message.message_type, "note_share")
+        self.assertEqual(shared_message.shared_note_title, "Title at share time")
+        self.assertTrue(shared_message.shared_note_available)
+        last_preview = list_conversations(self.bob, self.db)[0].last_message
+        self.assertEqual(last_preview.message_type, "note_share")
+        self.assertEqual(last_preview.shared_note_title, "Title at share time")
+        self.assertTrue(last_preview.shared_note_available)
+
+        opened = get_shared_note(conversation.id, shared_message.id, self.bob, self.db)
+        self.assertEqual(opened.content, "Private body")
+        self.assertEqual(opened.shared_by, "alice")
+
+        note.title = "Changed title"
+        self.db.commit()
+        self.assertEqual(get_shared_note(conversation.id, shared_message.id, self.bob, self.db).title, "Changed title")
+        self.assertEqual(
+            get_messages(conversation.id, None, 100, self.bob, self.db)[0].shared_note_title,
+            "Title at share time",
+        )
+
+        with self.assertRaises(HTTPException) as other_owner:
+            share_note(
+                conversation.id,
+                NoteShareCreate(note_id=other_owners_note.id),
+                self.alice,
+                self.db,
+            )
+        self.assertEqual(other_owner.exception.status_code, 404)
+
+        with self.assertRaises(HTTPException) as outsider:
+            get_shared_note(conversation.id, shared_message.id, self.cara, self.db)
+        self.assertEqual(outsider.exception.status_code, 404)
+        with self.assertRaises(HTTPException) as never_shared:
+            get_shared_note(conversation.id, 99999, self.bob, self.db)
+        self.assertEqual(never_shared.exception.status_code, 404)
+        with self.assertRaises(HTTPException) as outsider_share:
+            share_note(
+                conversation.id,
+                NoteShareCreate(note_id=note.id),
+                self.cara,
+                self.db,
+            )
+        self.assertEqual(outsider_share.exception.status_code, 404)
+        self.assertEqual(self.db.query(Note).count(), 2)
+
+        self.db.delete(note)
+        self.db.commit()
+        stored_message = self.db.query(Message).filter(Message.id == shared_message.id).one()
+        self.assertIsNone(stored_message.shared_note_id)
+        self.assertEqual(stored_message.shared_note_title, "Title at share time")
+        self.assertEqual(self.db.query(Note).count(), 1)
+        deleted_share = get_messages(conversation.id, None, 100, self.bob, self.db)[0]
+        self.assertFalse(deleted_share.shared_note_available)
+        self.assertFalse(list_conversations(self.bob, self.db)[0].last_message.shared_note_available)
+        with self.assertRaises(HTTPException) as deleted_note:
+            get_shared_note(conversation.id, shared_message.id, self.bob, self.db)
+        self.assertEqual(deleted_note.exception.status_code, 404)
 
     def test_jwt_subject_resolves_to_existing_user(self):
         credentials = HTTPAuthorizationCredentials(

@@ -1,4 +1,4 @@
-from database import SessionLocal, upgrade_note_metadata
+from database import SessionLocal, upgrade_message_note_shares, upgrade_note_metadata
 from sqlalchemy.orm import Session
 from database import engine
 from models import Base
@@ -30,6 +30,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 Base.metadata.create_all(bind=engine)
 upgrade_note_metadata()
+upgrade_message_note_shares()
 
 # Mount static and templates FIRST
 app.mount("/static", StaticFiles(directory="static"), name="static")

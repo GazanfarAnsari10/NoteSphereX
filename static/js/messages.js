@@ -15,6 +15,12 @@ const messageInput = document.getElementById("messageInput")
 const messageStatus = document.getElementById("messageStatus")
 const sendMessageButton = document.getElementById("sendMessageButton")
 const loadOlderMessagesButton = document.getElementById("loadOlderMessages")
+const sharedNoteDialog = document.getElementById("sharedNoteDialog")
+const sharedNoteAttribution = document.getElementById("sharedNoteAttribution")
+const sharedNoteTitle = document.getElementById("sharedNoteTitle")
+const sharedNoteCategory = document.getElementById("sharedNoteCategory")
+const sharedNoteContent = document.getElementById("sharedNoteContent")
+const sharedNoteStatus = document.getElementById("sharedNoteStatus")
 const sidebarMenu = document.getElementById("sidebarMenu")
 const sidebarClose = document.getElementById("sidebarClose")
 const sidebarBackdrop = document.getElementById("sidebarBackdrop")
@@ -114,7 +120,10 @@ function renderConversations(conversations) {
         name.textContent = conversation.other_user.username
         const preview = document.createElement("span")
         preview.className = "messages-conversation-preview"
-        preview.textContent = conversation.last_message?.content || "No messages yet"
+        const lastMessage = conversation.last_message
+        preview.textContent = lastMessage?.message_type === "note_share"
+            ? `Shared a note: ${lastMessage.shared_note_title || "Untitled note"}`
+            : lastMessage?.content || "No messages yet"
         details.append(name, preview)
         button.appendChild(details)
 
@@ -148,6 +157,41 @@ function renderMessageHistory() {
         const isOwnMessage = message.sender_id === currentUser.id
         item.classList.toggle("is-own-message", isOwnMessage)
 
+        if (message.message_type === "note_share") {
+            item.classList.add("is-note-share")
+            const card = document.createElement("article")
+            card.className = "messages-note-share-card"
+            const label = document.createElement("span")
+            label.className = "messages-note-share-label"
+            label.textContent = `Shared by ${message.sender_username}`
+            const title = document.createElement("h3")
+            title.className = "messages-note-share-title"
+            title.textContent = message.shared_note_title || "Untitled note"
+            card.append(label, title)
+
+            if (message.shared_note_available) {
+                const openButton = document.createElement("button")
+                openButton.type = "button"
+                openButton.className = "messages-note-share-open"
+                openButton.textContent = "Open note"
+                openButton.addEventListener("click", () => openSharedNote(message))
+                card.appendChild(openButton)
+            } else {
+                const unavailable = document.createElement("p")
+                unavailable.className = "messages-note-share-unavailable"
+                unavailable.textContent = "This note is no longer available."
+                card.appendChild(unavailable)
+            }
+
+            const time = document.createElement("time")
+            time.className = "messages-message-time"
+            time.dateTime = message.created_at
+            time.textContent = shortTime(message.created_at)
+            item.append(card, time)
+            messageThread.appendChild(item)
+            return
+        }
+
         const sender = document.createElement("span")
         sender.className = "messages-message-sender"
         sender.textContent = isOwnMessage ? "You" : message.sender_username
@@ -162,6 +206,39 @@ function renderMessageHistory() {
         messageThread.appendChild(item)
     })
 }
+
+function showSharedNoteStatus(message, isError = false) {
+    sharedNoteStatus.textContent = message
+    sharedNoteStatus.hidden = !message
+    sharedNoteStatus.dataset.state = isError ? "error" : ""
+}
+
+async function openSharedNote(message) {
+    sharedNoteTitle.textContent = message.shared_note_title || "Untitled note"
+    sharedNoteAttribution.textContent = `Shared by ${message.sender_username} · Read-only`
+    sharedNoteCategory.textContent = ""
+    sharedNoteContent.textContent = ""
+    showSharedNoteStatus("Loading shared note...")
+    sharedNoteDialog.showModal()
+
+    try {
+        const note = await requestMessagesApi(
+            `/messages/conversations/${activeConversation.id}/note-shares/${message.id}`
+        )
+        sharedNoteTitle.textContent = note.title || "Untitled note"
+        sharedNoteAttribution.textContent = `Shared by ${note.shared_by} · Read-only`
+        sharedNoteCategory.textContent = note.category || "Other"
+        sharedNoteContent.textContent = note.content || ""
+        showSharedNoteStatus("")
+    } catch (error) {
+        const messageText = error.message.toLowerCase().includes("no longer available")
+            ? "This note is no longer available."
+            : error.message
+        showSharedNoteStatus(messageText, true)
+    }
+}
+
+document.getElementById("closeSharedNote").addEventListener("click", () => sharedNoteDialog.close())
 
 async function loadConversationMessages(conversationId) {
     const messages = await requestMessagesApi(
