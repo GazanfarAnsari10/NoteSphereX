@@ -740,7 +740,7 @@
     z-index: 1;
     max-width: 860px;
     margin: 0 auto;
-    padding: 52px 28px 80px;
+    padding: 52px 28px 104px;
     display: flex;
     flex-direction: column;
     gap: 36px;
@@ -809,6 +809,38 @@
 /* ---------- Compose Box ---------- */
 .dash-compose {
     animation: pageIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.dash-compose[hidden] { display: none; }
+
+.dash-create-fab {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 40;
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border: 1px solid rgba(139, 197, 165, 0.35);
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--action-accent) 0%, #6db898 100%);
+    color: #0b1a12;
+    box-shadow: 0 5px 18px rgba(12, 25, 18, 0.28), 0 3px 14px rgba(139, 197, 165, 0.22);
+    cursor: pointer;
+    transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+.dash-create-fab:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, var(--action-accent-hover) 0%, #8bc5a5 100%);
+    box-shadow: 0 7px 22px rgba(12, 25, 18, 0.32), 0 5px 18px rgba(139, 197, 165, 0.3);
+}
+
+.dash-create-fab:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
 }
 
 .dash-compose-inner {
@@ -911,10 +943,17 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+    height: 300px;
     transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
     animation: noteIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
     position: relative;
     overflow: hidden;
+}
+
+.note-card.is-editing {
+    height: auto;
+    min-height: 300px;
+    overflow: visible;
 }
 
 .note-card::before {
@@ -941,6 +980,11 @@
 }
 
 .note-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 7;
+    line-clamp: 7;
+    overflow: hidden;
     font-size: 0.925rem;
     color: var(--text-primary);
     line-height: 1.65;
@@ -1313,7 +1357,7 @@
     .auth-card input[type="password"] { min-height: 44px; }
     .auth-btn { min-height: 44px; }
 
-    .dash-main { padding: 36px 16px 60px; gap: 26px; }
+    .dash-main { padding: 36px 16px 104px; gap: 26px; }
     .dash-title { font-size: 2rem; }
     .settings-main { padding: 36px 16px 60px; gap: 18px; }
     .settings-title { font-size: 2rem; }
@@ -1323,6 +1367,12 @@
     .settings-theme-option { flex: 1; }
     .settings-theme-option span { padding: 0 8px; }
     .dash-search-input { min-height: 44px; }
+    .dash-create-fab {
+        right: 16px;
+        bottom: max(16px, env(safe-area-inset-bottom));
+        width: 52px;
+        height: 52px;
+    }
     .dash-header-inner { padding: 0 16px; }
     .dash-notes-list { grid-template-columns: 1fr; }
     .dash-compose-footer { flex-direction: column; align-items: stretch; gap: 10px; }

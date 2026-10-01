@@ -9,6 +9,24 @@ const sidebarBackdrop = document.getElementById("sidebarBackdrop")
 const sidebarCollapse = document.getElementById("sidebarCollapse")
 const mobileSidebar = window.matchMedia("(max-width: 800px)")
 const noteSearch = document.getElementById("noteSearch")
+const noteComposer = document.getElementById("noteComposer")
+const createNoteButton = document.getElementById("createNoteButton")
+
+function setComposerOpen(isOpen, focusEditor = false) {
+    noteComposer.hidden = !isOpen
+    createNoteButton.setAttribute("aria-expanded", String(isOpen))
+    createNoteButton.setAttribute("aria-label", isOpen ? "Close note editor" : "Create note")
+    createNoteButton.title = isOpen ? "Close note editor" : "Create note"
+    createNoteButton.innerHTML = isOpen
+        ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+        : '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+
+    if (focusEditor) document.getElementById("noteContent").focus({ preventScroll: true })
+}
+
+createNoteButton.addEventListener("click", () => {
+    setComposerOpen(noteComposer.hidden, noteComposer.hidden)
+})
 
 noteSearch.addEventListener("input", () => {
     searchTerm = noteSearch.value.trim().toLowerCase()
@@ -41,6 +59,10 @@ document.addEventListener("keydown", event => {
     if (event.key === "Escape" && dashLayout.classList.contains("is-sidebar-open")) {
         setSidebarOpen(false, true)
     }
+    if (event.key === "Escape" && !noteComposer.hidden) {
+        setComposerOpen(false)
+        createNoteButton.focus()
+    }
 })
 
 mobileSidebar.addEventListener("change", event => {
@@ -58,7 +80,7 @@ document.querySelectorAll("[data-sidebar-link]").forEach(link => {
 
         if (mobileSidebar.matches) setSidebarOpen(false)
         if (link.hash === "#noteContent") {
-            document.getElementById("noteContent").focus({ preventScroll: true })
+            setComposerOpen(true, true)
         }
     })
 })
@@ -205,6 +227,7 @@ async function createNote() {
     }
 
     document.getElementById("noteContent").value = ""
+    setComposerOpen(false)
 
     fetchNotes()
 }
@@ -249,8 +272,11 @@ async function editNote(note, cardDiv, textEl, actionsEl) {
     const textarea = document.createElement("textarea")
     textarea.value = note.content
     textarea.classList.add("note-textarea")
-    // Auto-resize to content
     textarea.style.height = "auto"
+    textarea.addEventListener("input", () => {
+        textarea.style.height = "auto"
+        textarea.style.height = `${textarea.scrollHeight}px`
+    })
 
     // Replace actions with Save / Cancel
     actionsEl.innerHTML = ""
@@ -313,6 +339,7 @@ async function editNote(note, cardDiv, textEl, actionsEl) {
 
     // Insert textarea before actions
     cardDiv.insertBefore(textarea, actionsEl)
+    textarea.style.height = `${textarea.scrollHeight}px`
     textarea.focus()
     // Move cursor to end
     textarea.setSelectionRange(textarea.value.length, textarea.value.length)
