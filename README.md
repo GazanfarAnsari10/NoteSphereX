@@ -8,7 +8,13 @@
 
 <h2>Project Overview</h2>
 <p>
-  <b>NoteSphereX</b> is a full-stack web application for securely managing personal notes and exchanging private 1-to-1 messages with other NoteSphereX users. The application uses JWT authentication and PostgreSQL configured through <code>DATABASE_URL</code>.
+  <b>NoteSphereX</b> is a full-stack notes and messaging application built with <b>FastAPI, PostgreSQL, SQLAlchemy, and vanilla JavaScript</b>, deployed on Render.
+
+It enables users to create and manage private notes, exchange one-to-one messages with persistent history, and share selected notes through read-only conversation shares or revocable public links.
+
+The backend uses JWT-based authentication, hashed passwords, ownership checks, and access-controlled endpoints to manage user data and sharing permissions. PostgreSQL provides persistent storage for users, notes, conversations, messages, and public-share records.
+
+NoteSphereX demonstrates the integration of REST API development, relational database design, authentication, access control, and full-stack deployment in a single application.
 </p>
 
 <hr>
