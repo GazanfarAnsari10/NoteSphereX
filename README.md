@@ -104,10 +104,10 @@ NoteSphereX/
 
 <h3>4. Activate Virtual Environment</h3>
 <pre>
-# Windows
-myenv\Scripts\activate
+<h2>Windows</h2>
+myenv\Scripts\activate</pre>
 
-# Mac/Linux
+<pre><h2>Mac/Linux</h2>
 source myenv/bin/activate
 </pre>
 
